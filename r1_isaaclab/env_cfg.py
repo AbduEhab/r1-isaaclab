@@ -21,6 +21,7 @@ from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.utils import configclass, replace
+from isaaclab.utils.noise import UniformNoiseCfg as Unoise
 
 from isaaclab_tasks.core.velocity import mdp
 from isaaclab_tasks.core.velocity.velocity_env_cfg import LocomotionVelocityRoughEnvCfg, RewardsCfg
@@ -156,7 +157,11 @@ class R1RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.actions.joint_pos.scale = dict(ACTION_SCALE)
         # observations: Unitree's R1 contract has a gait clock and no base linear velocity (the real
         # robot has no sensor for it), and looks at the 24 actuated joints rather than all 26.
-        self.observations.policy.base_lin_vel = None
+        # Ablation v3: keep base linear velocity. v2 dropped it to match Unitree's contract, and the
+        # policy then never stepped (feet_air_time 0.0009) - standing is the safe optimum when the
+        # policy cannot estimate its own speed. For deployment it needs a state estimator, or the
+        # term is removed again once the gait is learned.
+        self.observations.policy.base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         self.observations.policy.gait_phase = ObsTerm(func=r1_mdp.gait_phase, params={"period": 0.6})
         self.observations.policy.joint_pos.params["asset_cfg"] = SceneEntityCfg("robot", joint_names=ACT_JOINTS)
         self.observations.policy.joint_vel.params["asset_cfg"] = SceneEntityCfg("robot", joint_names=ACT_JOINTS)
@@ -224,6 +229,7 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         )
         # curriculum
         self.curriculum.terrain_levels = None
+
 
 
 

@@ -1,6 +1,6 @@
-# labd — design
+﻿# labd â€” design
 
-**Status:** design only. Nothing here is implemented yet.
+**Status:** implemented in `labd/` — one Rust binary. See [LABD_RUN.md](LABD_RUN.md) for running it on the GPU machine.
 **One sentence:** a single executable on the GPU machine that serves a web page, owns an in-memory
 queue of training jobs, runs them one at a time, and streams their logs to every browser on the LAN.
 
@@ -23,7 +23,7 @@ Related: [LABD_UI.md](LABD_UI.md) (interface), [`labd/ui_mockup.html`](../labd/u
   interrupted job failed.
 - Multi-machine or multi-GPU scheduling.
 - Arbitrary code execution from the web form.
-- Authentication beyond a shared token (see §12). It is a LAN tool for a trusted team.
+- Authentication beyond a shared token (see Â§12). It is a LAN tool for a trusted team.
 - Model registry, experiment comparison UI, billing.
 
 ## 3. Users and scenarios
@@ -48,19 +48,19 @@ Related: [LABD_UI.md](LABD_UI.md) (interface), [`labd/ui_mockup.html`](../labd/u
 One process, three parts:
 
 ```
-┌──────────────────────────── labd ─────────────────────────────┐
-│                                                               │
-│  axum HTTP server  ──────┐                                    │
-│   /  /jobs  /events      │        Arc<Mutex<State>>           │
-│   /jobs/{id}/log         ├──────►  queue: VecDeque<Job>       │
-│   /jobs/{id}/artifacts   │         jobs:  Vec<Job>            │
-│   /jobs/{id}/cancel      │         next_id, running           │
-│                          │                                    │
-│  worker task (tokio)  ───┘        broadcast::Sender<Event>    │
-│   pop FIFO → spawn → stream stdout → parse → copy artifacts   │
-│                                          │                    │
-└──────────────────────────────────────────┼────────────────────┘
-                                           ▼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ labd â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                                                               â”‚
+â”‚  axum HTTP server  â”€â”€â”€â”€â”€â”€â”                                    â”‚
+â”‚   /  /jobs  /events      â”‚        Arc<Mutex<State>>           â”‚
+â”‚   /jobs/{id}/log         â”œâ”€â”€â”€â”€â”€â”€â–º  queue: VecDeque<Job>       â”‚
+â”‚   /jobs/{id}/artifacts   â”‚         jobs:  Vec<Job>            â”‚
+â”‚   /jobs/{id}/cancel      â”‚         next_id, running           â”‚
+â”‚                          â”‚                                    â”‚
+â”‚  worker task (tokio)  â”€â”€â”€â”˜        broadcast::Sender<Event>    â”‚
+â”‚   pop FIFO â†’ spawn â†’ stream stdout â†’ parse â†’ copy artifacts   â”‚
+â”‚                                          â”‚                    â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                                           â–¼
                      <artifacts>/<job-id>/  (model_*.pt, params/, tb/)
 ```
 
@@ -93,10 +93,10 @@ struct Job {
 ```
 
 ```
-queued ──► running ──► done
-   │          │
-   │          └──────► failed (non-zero exit / spawn error / interrupted)
-   └──────► cancelled (only while queued)
+queued â”€â”€â–º running â”€â”€â–º done
+   â”‚          â”‚
+   â”‚          â””â”€â”€â”€â”€â”€â”€â–º failed (non-zero exit / spawn error / interrupted)
+   â””â”€â”€â”€â”€â”€â”€â–º cancelled (only while queued)
 ```
 
 Rules:
@@ -111,14 +111,14 @@ Rules:
 
 | Method | Path | Body / params | Response |
 |---|---|---|---|
-| GET | `/` | — | HTML page |
+| GET | `/` | â€” | HTML page |
 | POST | `/jobs` | form: `task, num_envs, max_iterations, seed, requester` | 303 to `/` with the job queued |
-| GET | `/jobs` | — | JSON array of job summaries |
-| GET | `/jobs/{id}/log` | — | `text/plain` last N lines (non-streaming fallback) |
-| GET | `/events` | — | `text/event-stream` (SSE), see §8 |
-| POST | `/jobs/{id}/cancel` | — | 202 / 409 if not cancellable |
-| GET | `/jobs/{id}/artifacts/{name}` | — | file download (allowlisted names) |
-| GET | `/healthz` | — | `200 ok` when the worker task is alive |
+| GET | `/jobs` | â€” | JSON array of job summaries |
+| GET | `/jobs/{id}/log` | â€” | `text/plain` last N lines (non-streaming fallback) |
+| GET | `/events` | â€” | `text/event-stream` (SSE), see Â§8 |
+| POST | `/jobs/{id}/cancel` | â€” | 202 / 409 if not cancellable |
+| GET | `/jobs/{id}/artifacts/{name}` | â€” | file download (allowlisted names) |
+| GET | `/healthz` | â€” | `200 ok` when the worker task is alive |
 
 The form posts and redirects; the page itself is server-rendered HTML with ~100 lines of vanilla JS
 for SSE. No build step, no frontend framework.
@@ -145,7 +145,7 @@ event: log
 data: {"job":12,"line":"Learning iteration 805/1500"}
 ```
 
-`eta_s` = remaining iterations × the mean of the last 20 `Iteration time` values. Before the first
+`eta_s` = remaining iterations Ã— the mean of the last 20 `Iteration time` values. Before the first
 iteration the ETA is null and the UI shows "starting".
 
 Lines are stored in the job's ring buffer (last 2 000) so a browser that connects late can be
@@ -158,10 +158,10 @@ After the child exits successfully, the worker finds the newest
 
 ```
 <artifacts>/12/
-├── model_1499.pt          policy checkpoint
-├── params/env.yaml        fully resolved environment config
-├── params/agent.yaml      fully resolved agent config
-└── tb/events.out.tfevents.*
+â”œâ”€â”€ model_1499.pt          policy checkpoint
+â”œâ”€â”€ params/env.yaml        fully resolved environment config
+â”œâ”€â”€ params/agent.yaml      fully resolved agent config
+â””â”€â”€ tb/events.out.tfevents.*
 ```
 
 Retention: delete the oldest job's directory when the artifacts root exceeds a byte cap
@@ -197,7 +197,7 @@ Everything else is derived: the interpreter is `<isaaclab>/python.bat` on Window
 - The form cannot produce arbitrary arguments: the task is checked against the allowlist and all
   numeric fields are validated server-side (`num_envs` 1..=16384, `max_iterations` 1..=20000,
   `seed` 0..=u32::MAX).
-- No file uploads in v1 (see §14). Artifact downloads are restricted to the job's own directory and
+- No file uploads in v1 (see Â§14). Artifact downloads are restricted to the job's own directory and
   an explicit name allowlist.
 
 ## 13. Deployment
@@ -223,3 +223,4 @@ Everything else is derived: the interpreter is `<isaaclab>/python.bat` on Window
 5. A failing job shows a non-zero exit and its log; the queue continues with the next job.
 6. Two queued jobs run strictly one after the other; the second starts after the first exits.
 7. Killing the binary and restarting empties the queue without leaving a hung `running` job.
+

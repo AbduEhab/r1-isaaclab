@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>R1 Lab</title>
+<style>
+  :root { --bg:#f6f7f9; --panel:#fff; --ink:#14181d; --muted:#616b76; --line:#dfe3e8; --blue:#1667d9; --green:#1a7f47; --red:#c02b2b; --mono:ui-monospace,"Cascadia Mono",Consolas,monospace; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1216; --panel:#171c22; --ink:#e7ecf2; --muted:#9aa6b2; --line:#2a323b; --blue:#5aa2ff; --green:#4cc38a; --red:#ff6b6b; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  .wrap { max-width:960px; margin:0 auto; padding:24px 16px 64px; }
+  header { display:flex; align-items:center; gap:12px; padding-bottom:16px; border-bottom:1px solid var(--line); }
+  header h1 { font-size:16px; margin:0; }
+  header .host { color:var(--muted); font-family:var(--mono); font-size:12px; }
+  header .spacer { flex:1; }
+  .badge { font-family:var(--mono); font-size:12px; border:1px solid var(--line); border-radius:999px; padding:3px 10px; color:var(--muted); }
+  h2 { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:28px 0 10px; font-weight:600; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; }
+  .form { display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr; gap:12px; align-items:end; }
+  .form .submit { grid-column:1/-1; display:flex; justify-content:flex-end; }
+  label { display:block; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
+  input,select { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:7px; background:var(--bg); color:var(--ink); font:inherit; }
+  button.primary { background:var(--blue); color:#fff; border:0; border-radius:7px; padding:9px 16px; font:inherit; font-weight:600; cursor:pointer; }
+  .jobs { list-style:none; margin:0; padding:0; }
+  .job { display:grid; grid-template-columns:58px 1fr auto; gap:4px 14px; padding:14px 4px; border-top:1px solid var(--line); }
+  .job:first-child { border-top:0; }
+  .job .id { font-family:var(--mono); color:var(--muted); }
+  .status { display:inline-flex; align-items:center; gap:6px; font-size:12px; }
+  .dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .running .dot { background:var(--blue); animation:pulse 1.4s ease-in-out infinite; }
+  .queued .dot { background:var(--muted); }
+  .done .dot { background:var(--green); }
+  .failed .dot,.cancelled .dot { background:var(--red); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+  .title { font-weight:600; margin-left:10px; }
+  .meta { color:var(--muted); font-family:var(--mono); font-size:12px; }
+  .detail { grid-column:2/-1; color:var(--muted); font-family:var(--mono); font-size:12px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  progress { width:280px; height:6px; appearance:none; border:0; border-radius:999px; background:var(--line); overflow:hidden; }
+  progress::-webkit-progress-bar { background:var(--line); }
+  progress::-webkit-progress-value { background:var(--blue); }
+  .actions { display:flex; gap:8px; align-items:center; }
+  .actions button,.actions a { background:none; border:1px solid var(--line); color:var(--ink); border-radius:6px; padding:4px 10px; font:inherit; font-size:12px; cursor:pointer; text-decoration:none; }
+  .actions button:hover,.actions a:hover { border-color:var(--blue); color:var(--blue); }
+  .toast { margin-top:12px; font-size:13px; color:var(--green); }
+  .toast.err { color:var(--red); }
+  .drawer { position:fixed; top:0; right:0; width:min(680px,94vw); height:100%; background:var(--panel); border-left:1px solid var(--line); transform:translateX(100%); transition:transform .18s ease; display:flex; flex-direction:column; }
+  .drawer.open { transform:translateX(0); }
+  .drawer header { padding:12px 16px; border-bottom:1px solid var(--line); }
+  .drawer header h3 { margin:0; font-size:13px; }
+  .drawer .log { flex:1; overflow:auto; margin:0; padding:12px 16px; font-family:var(--mono); font-size:12px; line-height:1.6; background:#0b0e12; color:#d5dde6; white-space:pre-wrap; }
+  .drawer .actions { padding:10px 16px; border-top:1px solid var(--line); justify-content:flex-end; }
+  .scrim { position:fixed; inset:0; background:rgba(0,0,0,.35); opacity:0; pointer-events:none; transition:opacity .18s; }
+  .scrim.open { opacity:1; pointer-events:auto; }
+  .note { color:var(--muted); font-size:12px; margin-top:10px; }
+  @media (max-width:760px){ .form{grid-template-columns:1fr 1fr} .job{grid-template-columns:44px 1fr} .actions{grid-column:2} progress{width:100%} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>R1 Lab</h1>
+    <span class="host" id="host"></span>
+    <span class="spacer"></span>
+    <span class="badge" id="queueBadge">queue: 0</span>
+  </header>
+
+  <h2>New job</h2>
+  <div class="panel">
+    <form class="form" id="jobForm">
+      <div><label for="task">Task</label><select id="task"></select></div>
+      <div><label for="envs">Environments</label><input id="envs" type="number" value="2048" min="1" max="16384"></div>
+      <div><label for="iters">Iterations</label><input id="iters" type="number" value="1500" min="1" max="20000"></div>
+      <div><label for="seed">Seed</label><input id="seed" type="number" placeholder="random"></div>
+      <div><label for="who">Your name</label><input id="who" type="text" maxlength="32" value=""></div>
+      <div class="submit"><button class="primary" type="submit">Queue job</button></div>
+    </form>
+    <div class="toast" id="toast" hidden></div>
+  </div>
+
+  <h2>Queue</h2>
+  <div class="panel"><ul class="jobs" id="jobs"><li class="meta" style="padding:8px 4px">nothing queued yet</li></ul></div>
+  <p class="note">Jobs run one at a time on this machine. Restarting the daemon empties the queue.</p>
+</div>
+
+<div class="scrim" id="scrim" onclick="closeLog()"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <header><h3 id="drawerTitle">log</h3></header>
+  <pre class="log" id="log"></pre>
+  <div class="actions">
+    <button onclick="copyLog()">copy</button>
+    <button onclick="closeLog()">✕</button>
+  </div>
+</aside>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let tasks = [];
+let openJob = null;
+let progressTimer = null;
+
+fetch('/config').then(r => r.json()).then(cfg => {
+  tasks = cfg.tasks;
+  $('task').innerHTML = tasks.map(t => `<option>${t}</option>`).join('');
+  $('envs').value = cfg.default_envs;
+  $('iters').value = cfg.default_iterations;
+  $('host').textContent = location.host;
+});
+$('who').value = localStorage.getItem('labd-name') || '';
+
+async function refresh() {
+  const jobs = await (await fetch('/jobs')).json();
+  render(jobs);
+}
+
+function render(jobs) {
+  const list = $('jobs');
+  if (!jobs.length) { list.innerHTML = '<li class="meta" style="padding:8px 4px">nothing queued yet</li>'; }
+  else { list.innerHTML = jobs.slice().reverse().map(row).join(''); }
+  $('queueBadge').textContent = 'queue: ' + jobs.filter(j => j.status === 'queued' || j.status === 'running').length;
+  if (openJob !== null) {
+    const j = jobs.find(x => x.id === openJob);
+    if (j) updateDrawerProgress(j);
+  }
+}
+
+function row(j) {
+  const p = j.progress || {};
+  const running = j.status === 'running';
+  const pct = p.total ? Math.round(p.iteration / p.total * 100) : 0;
+  const reward = p.reward != null ? `${p.reward < 0 ? '−' : '+'}${Math.abs(p.reward).toFixed(1)}` : '';
+  const eta = p.eta_s != null ? `ETA ${Math.ceil(p.eta_s / 60)}m` : (running ? 'starting' : '');
+  const detail = running
+    ? `<span>iter ${p.iteration || 0}/${p.total || j.iterations}</span>
+       <progress value="${p.iteration || 0}" max="${p.total || j.iterations}"></progress>
+       <span>${pct}%</span>${reward ? `<span>reward ${reward}</span>` : ''}<span>${eta}</span>`
+    : `<span>${j.num_envs} env</span><span>${j.seed != null ? 'seed ' + j.seed : 'random seed'}</span>` +
+      (j.exit_code != null ? `<span>exit ${j.exit_code}</span>` : '');
+  const actions = [
+    j.status !== 'queued' ? `<button onclick="openLog(${j.id})">log</button>` : '',
+    j.status === 'queued' ? `<button onclick="cancelJob(${j.id})">cancel</button>` : '',
+    j.has_artifacts ? `<a href="/jobs/${j.id}/artifacts/model_1499.pt">model</a><button onclick="listArtifacts(${j.id})">files</button>` : '',
+  ].join('');
+  return `<li class="job ${j.status}" data-id="${j.id}">
+    <span class="id">#${j.id}</span>
+    <div><div><span class="status"><span class="dot"></span> ${j.status}</span>
+      <span class="title">${j.task}</span></div>
+      <div class="detail">${detail}</div></div>
+    <div class="actions">${actions}</div></li>`;
+}
+
+function toast(msg, err) { const t = $('toast'); t.textContent = msg; t.hidden = false; t.className = 'toast' + (err ? ' err' : ''); setTimeout(() => t.hidden = true, 6000); }
+
+$('jobForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = new URLSearchParams({
+    task: $('task').value, num_envs: $('envs').value, max_iterations: $('iters').value,
+    seed: $('seed').value || '', requester: $('who').value || 'anonymous',
+  });
+  localStorage.setItem('labd-name', $('who').value || '');
+  const r = await fetch('/jobs', { method: 'POST', body });
+  if (r.ok) { toast('Job queued.'); refresh(); }
+  else { toast(await r.text(), true); }
+});
+
+async function cancelJob(id) { await fetch(`/jobs/${id}/cancel`, { method: 'POST' }); refresh(); }
+
+async function openLog(id) {
+  openJob = id;
+  $('drawerTitle').textContent = `job #${id} · log`;
+  const text = await (await fetch(`/jobs/${id}/log`)).text();
+  $('log').textContent = text || '(no log yet)';
+  $('log').scrollTop = $('log').scrollHeight;
+  $('drawer').classList.add('open'); $('drawer').setAttribute('aria-hidden', 'false');
+  $('scrim').classList.add('open');
+}
+function closeLog() { openJob = null; $('drawer').classList.remove('open'); $('drawer').setAttribute('aria-hidden', 'true'); $('scrim').classList.remove('open'); }
+function copyLog() { navigator.clipboard.writeText($('log').textContent); }
+
+async function listArtifacts(id) {
+  const files = await (await fetch(`/jobs/${id}/artifacts`)).json();
+  $('drawerTitle').textContent = `job #${id} · artifacts`;
+  $('log').textContent = files.length ? files.map(f => f).join('\n') + '\n\n(open /jobs/' + id + '/artifacts/<name>)' : '(no artifacts)';
+  $('drawer').classList.add('open'); $('drawer').setAttribute('aria-hidden', 'false');
+  $('scrim').classList.add('open');
+}
+
+let lastProgress = {};
+function updateDrawerProgress(j) {
+  // Keep the drawer showing the log; the row already shows progress. Nothing to do here yet.
+}
+
+const es = new EventSource('/events');
+es.onmessage = (e) => {
+  let msg; try { msg = JSON.parse(e.data); } catch { return; }
+  if (msg.type === 'log') {
+    if (msg.id === openJob) {
+      const el = $('log');
+      el.textContent += (el.textContent ? '\n' : '') + msg.line;
+      el.scrollTop = el.scrollHeight;
+    }
+  } else if (msg.type === 'jobs') {
+    refresh();
+  } else if (msg.type === 'progress') {
+    const li = document.querySelector(`[data-id="${msg.id}"]`);
+    if (li && li.classList.contains('running')) {
+      const p = msg.progress;
+      const pct = p.total ? Math.round(p.iteration / p.total * 100) : 0;
+      const bar = li.querySelector('progress'); if (bar) { bar.value = p.iteration; bar.max = p.total; }
+      const spans = li.querySelectorAll('.detail span');
+      if (spans[0]) spans[0].textContent = `iter ${p.iteration}/${p.total}`;
+      if (spans[1]) spans[1].textContent = `${pct}%`;
+      if (spans[2] && p.reward != null) spans[2].textContent = `reward ${p.reward < 0 ? '−' : '+'}${Math.abs(p.reward).toFixed(1)}`;
+      if (spans[3] && p.eta_s != null) spans[3].textContent = `ETA ${Math.ceil(p.eta_s / 60)}m`;
+    }
+  }
+};
+
+refresh();
+setInterval(refresh, 4000);
+</script>
+</body>
+</html>

@@ -18,3 +18,7 @@ outputs/
 # OS
 .DS_Store
 Thumbs.db
+
+# labd build and runtime output
+labd/target/
+labd-artifacts/
