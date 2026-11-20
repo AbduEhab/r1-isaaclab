@@ -1,0 +1,37 @@
+services:
+  labd:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        ISAACSIM_IMAGE: nvcr.io/nvidia/isaac-sim:6.2.0
+        ISAACLAB_TAG: v3.0.0
+    image: r1-isaaclab:6.2
+    container_name: r1-isaaclab
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - r1-artifacts:/artifacts
+      # Kit caches: without them every start recompiles shaders (minutes).
+      - isaac-cache-kit:/isaac-sim/kit/cache
+      - isaac-cache-ov:/root/.cache/ov
+      - isaac-cache-gl:/root/.cache/nvidia/GLCache
+      - isaac-logs:/root/.nvidia-omniverse/logs
+    # One GPU, exclusive: the queue inside labd already serialises jobs.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    ipc: host
+    shm_size: "2gb"
+
+volumes:
+  r1-artifacts:
+  isaac-cache-kit:
+  isaac-cache-ov:
+  isaac-cache-gl:
+  isaac-logs:
