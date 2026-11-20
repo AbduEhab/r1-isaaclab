@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     One-shot setup for the R1 Isaac Lab stack + the labd queue daemon, all under one root.
 
@@ -45,6 +45,10 @@
 .PARAMETER SkipVerify
     Skip the two-iteration smoke run at the end.
 
+.PARAMETER OpenFirewall
+    Add an inbound rule for TCP 8080 on private networks (needs an elevated shell; otherwise add it
+    by hand when Windows asks on the first run).
+
 .EXAMPLE
     .\setup-isaac.ps1 -IsaacSimZip D:\downloads\isaac-sim-6.2.0.zip
 
@@ -61,7 +65,8 @@ param(
     [string]$IsaacLabTag = "v3.0.0",
     [string]$RepoSource = "",
     [switch]$SkipIsaacLabInstall,
-    [switch]$SkipVerify
+    [switch]$SkipVerify,
+    [switch]$OpenFirewall
 )
 
 $ErrorActionPreference = 'Stop'
@@ -98,6 +103,16 @@ $artifacts = Join-Path $root "artifacts"
 New-Item -ItemType Directory -Force -Path $artifacts | Out-Null
 
 Say "root: $root"
+$freeGb = [math]::Round((Get-Item $root).PSDrive.Free / 1GB, 1)
+Note "free space on $((Get-Item $root).PSDrive.Name): ${freeGb} GB"
+if ($freeGb -lt 60) {
+    Fail "only ${freeGb} GB free: Isaac Sim, Isaac Lab and torch need about 60 GB"
+}
+
+# Kit and Isaac Sim prompt for the NVIDIA EULA on a first start; accept it from the environment so
+# an unattended setup does not block on a dialog.
+$env:OMNI_KIT_ACCEPT_EULA = "YES"
+
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     Fail "git is required: install Git for Windows, or copy IsaacLab and r1-isaaclab in by hand"
 }
@@ -213,6 +228,17 @@ if (-not $SkipVerify) {
     Say "verification passed"
 }
 
+# ----------------------------------------------------------------------------- firewall
+if ($OpenFirewall) {
+    try {
+        New-NetFirewallRule -DisplayName "labd TCP 8080" -Direction Inbound -Protocol TCP `
+            -LocalPort 8080 -Action Allow -Profile Private -ErrorAction Stop | Out-Null
+        Say "firewall: inbound TCP 8080 allowed on private networks"
+    } catch {
+        Note "could not add the firewall rule (needs an elevated shell): $($_.Exception.Message)"
+    }
+}
+
 # ----------------------------------------------------------------------------- summary
 Write-Host ""
 Write-Host "Setup complete." -ForegroundColor Green
@@ -228,3 +254,4 @@ Write-Host "  Then open:         http://<this-machine>:8080"
 Write-Host ""
 Write-Host "  Allow TCP 8080 through Windows Firewall on the first run (private networks)." -ForegroundColor DarkGray
 Write-Host "  Logs of this setup: $logs" -ForegroundColor DarkGray
+
