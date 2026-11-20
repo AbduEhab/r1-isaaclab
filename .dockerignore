@@ -1,0 +1,11 @@
+# Keep the build context to the source that matters.
+.git
+.gitignore
+logs/
+labd-artifacts/
+labd/target/
+labd/dist/
+**/__pycache__/
+*.pyc
+models/
+docker/
