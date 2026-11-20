@@ -196,8 +196,10 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
 
         # physics
         newton_mjwarp = self.sim.physics.newton_mjwarp
-        newton_mjwarp.solver_cfg.njmax = 120
-        newton_mjwarp.solver_cfg.nconmax = 12
+        newton_mjwarp.solver_cfg.njmax = 300
+        # 12 per env x 2048 = 24 576 total, below the ~34 000 contacts the R1 makes: contacts were dropped.
+        # Unitree's R1 uses 48 (rough) / auto (flat); 48 leaves headroom without a large allocation.
+        newton_mjwarp.solver_cfg.nconmax = 48
         self.sim.physics.default = newton_mjwarp
         # scene
         self.scene.terrain.terrain_type = "plane"
@@ -222,5 +224,6 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         )
         # curriculum
         self.curriculum.terrain_levels = None
+
 
 

@@ -1,0 +1,251 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>R1 Lab â€” labd mockup</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #fff; --ink: #14181d; --muted: #616b76; --line: #dfe3e8;
+    --blue: #1667d9; --green: #1a7f47; --red: #c02b2b; --amber: #a86a00; --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f1216; --panel: #171c22; --ink: #e7ecf2; --muted: #9aa6b2; --line: #2a323b;
+            --blue: #5aa2ff; --green: #4cc38a; --red: #ff6b6b; --amber: #e0a341; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+  header { display: flex; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 16px; margin: 0; letter-spacing: .2px; }
+  header .host { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+  header .spacer { flex: 1; }
+  .badge { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; color: var(--muted); }
+  .help { border: 1px solid var(--line); background: none; color: var(--muted); border-radius: 999px; width: 26px; height: 26px; cursor: pointer; }
+  h2 { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 28px 0 10px; font-weight: 600; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .form { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 12px; align-items: end; }
+  .form .submit { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+  label { display: block; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+  input, select { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); font: inherit; }
+  input:focus, select:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+  button.primary { background: var(--blue); color: #fff; border: 0; border-radius: 7px; padding: 9px 16px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.primary:hover { filter: brightness(1.08); }
+  .jobs { list-style: none; margin: 0; padding: 0; }
+  .job { display: grid; grid-template-columns: 58px 1fr auto; gap: 4px 14px; padding: 14px 4px; border-top: 1px solid var(--line); }
+  .job:first-child { border-top: 0; }
+  .job .id { font-family: var(--mono); color: var(--muted); }
+  .job .status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .running .dot { background: var(--blue); animation: pulse 1.4s ease-in-out infinite; }
+  .queued .dot { background: var(--muted); }
+  .done .dot { background: var(--green); }
+  .failed .dot { background: var(--red); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  .title { font-weight: 600; margin-left: 10px; }
+  .meta { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+  .detail { grid-column: 2 / -1; color: var(--muted); font-family: var(--mono); font-size: 12px; display: flex; align-items: center; gap: 12px; }
+  progress { width: 280px; height: 6px; appearance: none; border: 0; border-radius: 999px; background: var(--line); overflow: hidden; }
+  progress::-webkit-progress-bar { background: var(--line); }
+  progress::-webkit-progress-value { background: var(--blue); }
+  progress::-moz-progress-bar { background: var(--blue); }
+  .actions { display: flex; gap: 8px; align-items: center; }
+  .actions button { background: none; border: 1px solid var(--line); color: var(--ink); border-radius: 6px; padding: 4px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+  .actions button:hover { border-color: var(--blue); color: var(--blue); }
+  .toast { margin-top: 12px; font-size: 13px; color: var(--green); }
+  .drawer { position: fixed; top: 0; right: 0; width: min(620px, 92vw); height: 100%; background: var(--panel);
+            border-left: 1px solid var(--line); transform: translateX(100%); transition: transform .18s ease; display: flex; flex-direction: column; }
+  .drawer.open { transform: translateX(0); }
+  .drawer header { padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .drawer header h3 { margin: 0; font-size: 13px; }
+  .drawer .log { flex: 1; overflow: auto; margin: 0; padding: 12px 16px; font-family: var(--mono); font-size: 12px; line-height: 1.6; background: #0b0e12; color: #d5dde6; }
+  .drawer .log .t { color: #6b7785; }
+  .drawer .actions { padding: 10px 16px; border-top: 1px solid var(--line); justify-content: flex-end; }
+  .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity .18s; }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+  .note { color: var(--muted); font-size: 12px; margin-top: 10px; }
+  @media (max-width: 760px) {
+    .form { grid-template-columns: 1fr 1fr; }
+    .job { grid-template-columns: 44px 1fr; }
+    .actions { grid-column: 2; }
+    .detail { flex-wrap: wrap; }
+    progress { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>R1 Lab</h1>
+    <span class="host">gpu-box:8080</span>
+    <span class="spacer"></span>
+    <span class="badge" id="queueBadge">queue: 2</span>
+    <button class="help" title="Tasks: Isaac-Velocity-Flat-R1 / -Rough-R1. Envs = robots simulated in parallel; iterations = PPO iterations. Artifacts land in /artifacts/<job-id>/.">?</button>
+  </header>
+
+  <h2>New job</h2>
+  <div class="panel">
+    <form class="form" id="jobForm" onsubmit="return queueJob(event)">
+      <div>
+        <label for="task">Task</label>
+        <select id="task">
+          <option selected>Isaac-Velocity-Flat-R1</option>
+          <option>Isaac-Velocity-Rough-R1</option>
+        </select>
+      </div>
+      <div><label for="envs">Environments</label><input id="envs" type="number" value="2048" min="1" max="16384"></div>
+      <div><label for="iters">Iterations</label><input id="iters" type="number" value="1500" min="1" max="20000"></div>
+      <div><label for="seed">Seed</label><input id="seed" type="number" placeholder="random"></div>
+      <div><label for="who">Your name</label><input id="who" type="text" value="abdu" maxlength="32"></div>
+      <div class="submit"><button class="primary" type="submit">Queue job</button></div>
+    </form>
+    <div class="toast" id="toast" hidden></div>
+  </div>
+
+  <h2>Queue</h2>
+  <div class="panel">
+    <ul class="jobs" id="jobs">
+      <li class="job running" data-id="12">
+        <span class="id">#12</span>
+        <div>
+          <div><span class="status"><span class="dot"></span> running</span>
+               <span class="title">Isaac-Velocity-Flat-R1</span></div>
+          <div class="detail">
+            <span id="iterText">iter 804/1500</span>
+            <progress id="bar" value="804" max="1500"></progress>
+            <span id="pct">53%</span>
+            <span id="reward">reward âˆ’12.1</span>
+            <span id="eta">ETA 51m</span>
+          </div>
+        </div>
+        <div class="actions"><button onclick="openLog(12)">log</button></div>
+      </li>
+
+      <li class="job queued" data-id="11">
+        <span class="id">#11</span>
+        <div>
+          <div><span class="status"><span class="dot"></span> queued</span>
+               <span class="title">Isaac-Velocity-Rough-R1</span></div>
+          <div class="detail"><span>4096 env</span><span>1 ahead</span></div>
+        </div>
+        <div class="actions"><button onclick="cancelJob(11)">cancel</button></div>
+      </li>
+
+      <li class="job done" data-id="10">
+        <span class="id">#10</span>
+        <div>
+          <div><span class="status"><span class="dot"></span> done</span>
+               <span class="title">Isaac-Velocity-Flat-R1</span></div>
+          <div class="detail"><span>2048 env</span><span>reward +20.6</span><span>1h 30m</span></div>
+        </div>
+        <div class="actions">
+          <button onclick="openLog(10)">log</button>
+          <button onclick="download(10)">download</button>
+        </div>
+      </li>
+
+      <li class="job failed" data-id="9">
+        <span class="id">#9</span>
+        <div>
+          <div><span class="status"><span class="dot"></span> failed</span>
+               <span class="title">Isaac-Velocity-Flat-R1</span></div>
+          <div class="detail"><span>1024 env</span><span>exit 1</span></div>
+        </div>
+        <div class="actions"><button onclick="openLog(9)">log</button></div>
+      </li>
+    </ul>
+  </div>
+  <p class="note">Static mockup: numbers animate for illustration; there is no server behind this page.</p>
+</div>
+
+<div class="scrim" id="scrim" onclick="closeLog()"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <header><h3 id="drawerTitle">job #12 Â· log</h3></header>
+  <pre class="log" id="log" aria-live="polite"></pre>
+  <div class="actions">
+    <button onclick="copyLog()">copy</button>
+    <button onclick="closeLog()">âœ•</button>
+  </div>
+</aside>
+
+<script>
+  const logLines = [
+    "Learning iteration 802/1500",
+    "Mean reward: -12.31", "Mean episode length: 979.4",
+    "Metrics/base_velocity/error_vel_xy: 0.6103",
+    "Iteration time: 4.51s",
+    "Learning iteration 803/1500",
+    "Mean reward: -12.14", "Mean episode length: 982.1",
+    "Metrics/base_velocity/error_vel_xy: 0.6077",
+    "Iteration time: 4.48s",
+  ];
+
+  // --- tiny SSE simulation: the real page listens to /events instead -------------------------
+  let iter = 804, total = 1500, reward = -12.1;
+  setInterval(() => {
+    if (iter >= total) return;
+    iter += 1;
+    if (iter % 10 === 0) reward = +(reward + (Math.random() - 0.45) * 0.2).toFixed(2);
+    document.getElementById("iterText").textContent = `iter ${iter}/${total}`;
+    const bar = document.getElementById("bar"); bar.value = iter;
+    document.getElementById("pct").textContent = Math.round(iter / total * 100) + "%";
+    document.getElementById("reward").textContent = "reward " + (reward < 0 ? "âˆ’" : "+") + Math.abs(reward).toFixed(1);
+    const left = (total - iter) * 4.5;
+    document.getElementById("eta").textContent = "ETA " + Math.ceil(left / 60) + "m";
+    if (document.getElementById("drawer").classList.contains("open") && iter % 3 === 0) {
+      appendLine(`Learning iteration ${iter}/${total}`);
+    }
+  }, 700);
+
+  function ts() { return new Date().toLocaleTimeString([], {hour12:false}); }
+  function appendLine(text) {
+    const pre = document.getElementById("log");
+    const span = document.createElement("span");
+    span.innerHTML = `<span class="t">[${ts()}]</span> ${text}\n`;
+    pre.appendChild(span);
+    pre.scrollTop = pre.scrollHeight;
+  }
+  function openLog(id) {
+    const pre = document.getElementById("log");
+    pre.innerHTML = "";
+    document.getElementById("drawerTitle").textContent = `job #${id} Â· log`;
+    logLines.forEach(appendLine);
+    document.getElementById("drawer").classList.add("open");
+    document.getElementById("drawer").setAttribute("aria-hidden", "false");
+    document.getElementById("scrim").classList.add("open");
+  }
+  function closeLog() {
+    document.getElementById("drawer").classList.remove("open");
+    document.getElementById("drawer").setAttribute("aria-hidden", "true");
+    document.getElementById("scrim").classList.remove("open");
+  }
+  function copyLog() { navigator.clipboard.writeText(document.getElementById("log").innerText); }
+  function download(id) { alert(`mockup: would download /jobs/${id}/artifacts/run.zip`); }
+  function cancelJob(id) {
+    if (!confirm(`Cancel job #${id}?`)) return;
+    document.querySelector(`[data-id="${id}"]`)?.remove();
+    toast("Job cancelled.");
+  }
+  let nextId = 13;
+  function queueJob(e) {
+    e.preventDefault();
+    const task = document.getElementById("task").value;
+    const envs = document.getElementById("envs").value;
+    toast(`Job #${nextId} queued â€” 2 jobs ahead, ETA about 51 min.`);
+    const li = document.createElement("li");
+    li.className = "job queued"; li.dataset.id = nextId;
+    li.innerHTML = `<span class="id">#${nextId}</span>
+      <div><div><span class="status"><span class="dot"></span> queued</span>
+      <span class="title">${task}</span></div>
+      <div class="detail"><span>${envs} env</span><span>2 ahead</span></div></div>
+      <div class="actions"><button onclick="cancelJob(${nextId})">cancel</button></div>`;
+    document.getElementById("jobs").appendChild(li);
+    nextId++;
+    document.getElementById("queueBadge").textContent = "queue: 3";
+    return false;
+  }
+  function toast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.hidden = false; }
+</script>
+</body>
+</html>
+
