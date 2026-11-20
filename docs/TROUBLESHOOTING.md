@@ -1,4 +1,4 @@
-# Troubleshooting
+﻿# Troubleshooting
 
 Every entry below was hit while bringing the R1 up. The first section is environment-level; the
 rest are Isaac Lab / asset specifics.
@@ -24,7 +24,7 @@ Cause: a pip `numpy` in `kit\python\Lib\site-packages` shadows the one Isaac Sim
 
 Fix: do not install numpy into Isaac Sim's Python by hand. Let `isaaclab.bat --install` manage it,
 or remove the pip copy. Inside the app, `sys.path` puts `site-packages` before the prebundles, so a
-hand-installed package wins — that is the mechanism.
+hand-installed package wins â€” that is the mechanism.
 
 ### `UnicodeEncodeError: 'charmap' codec can't encode...`
 
@@ -56,6 +56,23 @@ names it `pelvis_link`.
 Fix: set `BASE` in `env_cfg.py` to the name the USD actually uses. The available-names list in the
 error message is the ground truth.
 
+### The policy hops or bounces instead of walking
+
+Symptom: the robot keeps its feet but moves by jumping, both feet leaving the ground together.
+
+Cause: the training contract differed from Unitree's R1 reference in three ways that all push the
+optimiser towards a symmetric bounce:
+
+1. the default pose was straight-legged at 0.90 m; Unitree's `HOME_KEYFRAME` crouches (knee 0.3,
+   pelvis 0.76 m), which gives the policy a bent-knee stride to extend;
+2. there was **no gait-phase observation** — without a clock, a symmetric policy has no reason to
+   alternate legs, and a two-feet-together hop tracks velocity just as well;
+3. the action space was 14 joints (legs + waist) instead of the reference's 24 (legs + waist + arms),
+   and the observation included base linear velocity, which the real robot cannot measure.
+
+Fix (applied): `asset.py` uses `HOME_KEYFRAME`; `env_cfg.py` acts 24 joints and observes 83
+dims (adds `gait_phase`, drops base linear velocity); commands are Unitree's −0.5…1.0 m/s.
+Then retrain — the old checkpoint cannot be reused, the action and observation shapes changed.
 ### No contacts / feet rewards stay zero
 
 Cause: the USD nests the links under a `Geometry` Xform
@@ -67,7 +84,7 @@ Fix: `self.scene.contact_forces.prim_path = "{ENV_REGEX_NS}/Robot/Geometry/.*"` 
 
 ### `Actuator groups cover N joints; expected M after accounting for fixed tendons`
 
-Cause: a joint has no actuator group — for the R1, usually the two head joints.
+Cause: a joint has no actuator group â€” for the R1, usually the two head joints.
 
 Fix: cover every joint, including `head_pitch_joint` and `head_yaw_joint`
 (`r1_isaaclab/asset.py`).
@@ -76,9 +93,10 @@ Fix: cover every joint, including `head_pitch_joint` and `head_yaw_joint`
 
 Cause: an Isaac Lab 3.0 defect in the PhysX articulation data path
 (`isaaclab_physx/assets/articulation/articulation_data.py`): `joint_acc` passes a `ProxyArray`
-wrapper to `wp.launch`. Unwrapping it is not enough — the wrapped buffer is on the **CPU** while
+wrapper to `wp.launch`. Unwrapping it is not enough â€” the wrapped buffer is on the **CPU** while
 the kernel launches on `cuda:0`, producing `Warp CUDA error 700`.
 
 Status: not hit by the Newton tasks in this repository, which is why they are the supported path
 here. If you need the PhysX backend, this must be worked around (a host-side finite difference
 works) or fixed upstream.
+

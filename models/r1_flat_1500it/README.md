@@ -1,4 +1,4 @@
-# Trained policy: 1500 iterations on the flat task
+﻿# Trained policy: 1500 iterations on the flat task
 
 The first locomotion policy trained for the R1 in Isaac Lab. 2048 environments, 1500 PPO
 iterations, **5376 s (1 h 29.6 min)** on the RTX A5000 Laptop, Newton/MuJoCo-Warp backend.
@@ -14,13 +14,13 @@ iterations, **5376 s (1 h 29.6 min)** on the RTX A5000 Laptop, Newton/MuJoCo-War
 
 | Iteration | Mean reward | Mean episode length | vel error xy (m/s) | vel error yaw (rad/s) |
 |---|---|---|---|---|
-| 0 | −0.07 | 13 | 0.642 | 2.437 |
-| 1 | −0.20 | 28 | 0.810 | 2.630 |
-| 10 | −4.14 | 240 | 0.596 | 2.736 |
-| 50 | −15.13 | 968 | 0.621 | 2.378 |
-| 100 | −13.13 | 995 | 0.643 | 1.858 |
-| 250 | −8.69 | 955 | 0.657 | 1.535 |
-| 500 | −4.32 | 957 | 0.666 | 1.236 |
+| 0 | âˆ’0.07 | 13 | 0.642 | 2.437 |
+| 1 | âˆ’0.20 | 28 | 0.810 | 2.630 |
+| 10 | âˆ’4.14 | 240 | 0.596 | 2.736 |
+| 50 | âˆ’15.13 | 968 | 0.621 | 2.378 |
+| 100 | âˆ’13.13 | 995 | 0.643 | 1.858 |
+| 250 | âˆ’8.69 | 955 | 0.657 | 1.535 |
+| 500 | âˆ’4.32 | 957 | 0.666 | 1.236 |
 | 750 | +4.38 | 998 | 0.412 | 1.196 |
 | 1000 | +14.47 | 1000 | 0.203 | 0.797 |
 | 1250 | +19.91 | 1000 | 0.168 | 0.579 |
@@ -30,7 +30,7 @@ Last 50 iterations: **reward 20.56, episode length 999.1, vel error xy 0.193 m/s
 Best single iteration: reward 22.07.
 
 Reading it: episode length saturates at the 20 s cap almost immediately (the robot stops falling),
-but tracking only takes off after ~700 iterations, once the reward turns positive — from there the
+but tracking only takes off after ~700 iterations, once the reward turns positive â€” from there the
 velocity error falls roughly threefold and the yaw error fourfold.
 
 ## Files
@@ -52,7 +52,10 @@ isaaclab.bat -p <repo>\scripts\play.py --rl_library rsl_rl --task Isaac-Velocity
 ## Limits
 
 - Flat ground, no height scan: not trained for steps, slopes or debris.
-- Command range 0–1 m/s forward, ±0.5 m/s lateral, ±1 rad/s yaw.
+- Command range 0â€“1 m/s forward, Â±0.5 m/s lateral, Â±1 rad/s yaw.
 - Arms and head are held by their own PD; they are not part of the policy's action.
 - Not deployed to the robot yet: the `deploy.yaml` export and the team's POLICY_CHECKLIST gate
   still apply.
+
+> **Superseded.** This checkpoint was trained with the pre-verification contract: straight-legged default pose, 14 actions, no gait-phase observation. It keeps its feet but moves by hopping. The corrected task (Unitree's HOME_KEYFRAME pose, 24 actions, 83-dim observation with gait phase) is what env_cfg.py now defines; this run is kept as history.
+

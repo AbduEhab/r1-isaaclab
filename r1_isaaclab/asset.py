@@ -77,8 +77,23 @@ R1_CFG = ArticulationCfg(
         ],
         variants=dict(PHYSICS_VARIANT),
     ),
-    init_state=ArticulationCfg.InitialStateCfg(pos=(0.0, 0.0, 0.90)),
+    init_state=ArticulationCfg.InitialStateCfg(
+        # Unitree's HOME_KEYFRAME for the R1 (r1_constants.py): a crouch, not straight legs. From a
+        # straight-legged stance the cheapest way to move is to bounce, which is what the first
+        # policy learned; the reference stands at 0.76 m with the knees bent 0.3 rad.
+        pos=(0.0, 0.0, 0.76),
+        joint_pos={
+            ".*_hip_pitch_joint": -0.1,
+            ".*_knee_joint": 0.3,
+            ".*_ankle_pitch_joint": -0.2,
+            ".*_shoulder_pitch_joint": 0.35,
+            ".*_elbow_joint": 0.87,
+            "left_shoulder_roll_joint": 0.18,
+            "right_shoulder_roll_joint": -0.18,
+        },
+    ),
     articulation_root_prim_path=ARTICULATION_ROOT,
+    soft_joint_pos_limit_factor=0.9,
     actuators={
         "legs": _actuator(LEGS, 100.0, 2.0, 60.0),
         "ankles": _actuator(ANKLES, 40.0, 2.0, 50.0),

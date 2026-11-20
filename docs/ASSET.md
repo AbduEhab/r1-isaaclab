@@ -1,8 +1,8 @@
-# The R1 asset
+﻿# The R1 asset
 
 `assets/r1/` holds the R1 as Isaac Sim sees it: `R1/R1.usda` plus payloads (geometry, materials,
 and one physics payload per backend). It is generated from the team's authoritative `urdf/R1.urdf`
-with Isaac Sim's own URDF importer — not hand-edited, not converted from MuJoCo.
+with Isaac Sim's own URDF importer â€” not hand-edited, not converted from MuJoCo.
 
 ## Why not the MuJoCo-converted USD
 
@@ -37,7 +37,7 @@ isaaclab.bat -p scripts\import_r1_urdf.py --urdf build\urdf\R1.urdf --out assets
 ```
 
 with `fix_base=False` (free base), `merge_fixed_joints=True` (the ankle linkage and sensor frames
-are fixed joints) and **the multi-physics conversion kept on** — that is what writes the `mujoco`
+are fixed joints) and **the multi-physics conversion kept on** â€” that is what writes the `mujoco`
 variant.
 
 ## What the importer writes
@@ -49,19 +49,22 @@ variant.
 | `mujoco` | 26 `MjcJointAPI`s, MJCF-shaped physics | **Isaac Lab's Newton backend** (the task uses this) |
 | `physics` | generic USD physics + `PhysicsArticulationRootAPI` | plain USD physics |
 | `physx` | PhysX payload | PhysX backend |
-| `none` | empty | — |
+| `none` | empty | â€” |
 
 The task selects `{"Physics": "mujoco"}`; that is the variant whose joint schemas Newton's
 MuJoCo-Warp builder reads. `import_r1_urdf.py --flat` (no multi-physics conversion) drops the
-`mujoco` variant and makes the asset unusable for Newton — that flag exists for experimenting with
+`mujoco` variant and makes the asset unusable for Newton â€” that flag exists for experimenting with
 the PhysX backend only.
 
 ## What the asset contains
 
 - 26 revolute joints: 12 legs, 2 waist, 10 arms, 2 head.
 - A free base. The root body is named **`pelvis_link`** (the MuJoCo-converted asset called it
-  `pelvis` — matters for contact sensors and terminations).
+  `pelvis` â€” matters for contact sensors and terminations).
 - Links nested under a `Geometry` Xform: `/World/envs/env_i/Robot/Geometry/<link>`.
+- Initial pose is Unitree's `HOME_KEYFRAME`: pelvis at 0.76 m, hip pitch −0.1, knee 0.3, ankle pitch −0.2,
+  shoulder pitch 0.35, shoulder roll ±0.18, elbow 0.87 (a crouch — straight legs make a bouncing gait
+  the path of least resistance), with `soft_joint_pos_limit_factor=0.9`.
 - Contact reporting enabled; self-collisions off.
 
 ## Actuators (in `r1_isaaclab/asset.py`)
@@ -77,9 +80,10 @@ the PhysX backend only.
 | head_yaw | head yaw | 10 | 0.1 | 0.86 N m | 11 |
 
 All groups carry `armature=0.01`. The gains and limits are the R1's own (team
-`POLICY_CHECKLIST.md` rule 1), not the G1's 150–200. The head's yaw limit follows the URDF
+`POLICY_CHECKLIST.md` rule 1), not the G1's 150â€“200. The head's yaw limit follows the URDF
 (0.86 N m at 11 rad/s); older copies of the model list 33 N m and are wrong.
 
 If an actuator group is missing, Isaac Lab warns:
 `Actuator groups cover N joints; expected M after accounting for fixed tendons.` Every joint must
 be covered, including the head, or those joints are undriven and flop.
+

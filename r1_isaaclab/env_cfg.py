@@ -1,4 +1,4 @@
-"""Environment configuration for the R1 velocity-tracking task.
+﻿"""Environment configuration for the R1 velocity-tracking task.
 
 Mirrors Isaac Lab's stock G1 velocity task (isaaclab_tasks/core/velocity/config/g1), so the reward
 terms, events and curriculum are the ones NVIDIA trains with, but with:
@@ -6,8 +6,8 @@ terms, events and curriculum are the ones NVIDIA trains with, but with:
 * the R1 asset (rebuilt from the team's ``urdf/R1.urdf``, see ``docs/ASSET.md``),
 * the R1's body and joint names,
 * the R1's gains and limits from the team's POLICY_CHECKLIST.md (see ``asset.py``),
-* the per-joint action scale ``0.25 * torque_limit / kp`` — 0.15 rad per unit for hips, knees and
-  waist, 0.31 for ankles — instead of one value for every joint.
+* the per-joint action scale ``0.25 * torque_limit / kp`` Ã¢â‚¬â€ 0.15 rad per unit for hips, knees and
+  waist, 0.31 for ankles Ã¢â‚¬â€ instead of one value for every joint.
 
 Only the 12 leg joints and the 2 waist joints are actuated (action shape 14). The arms and head
 hold their default pose through their own actuators, as they do on the robot while it walks.
@@ -17,6 +17,7 @@ tasks use and what the URDF-rebuilt USD is imported for (its ``mujoco`` variant 
 joint schemas Newton reads).
 """
 
+from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.utils import configclass, replace
@@ -24,6 +25,7 @@ from isaaclab.utils import configclass, replace
 from isaaclab_tasks.core.velocity import mdp
 from isaaclab_tasks.core.velocity.velocity_env_cfg import LocomotionVelocityRoughEnvCfg, RewardsCfg
 
+from . import mdp as r1_mdp
 from .asset import R1_CFG
 
 LEG_JOINTS = [
@@ -35,6 +37,10 @@ LEG_JOINTS = [
     ".*_ankle_roll_joint",
 ]
 WAIST_JOINTS = ["waist_roll_joint", "waist_yaw_joint"]
+SHOULDER_JOINTS = [".*_shoulder_pitch_joint", ".*_shoulder_roll_joint"]
+ARM_JOINTS = [".*_shoulder_yaw_joint", ".*_elbow_joint", ".*_wrist_roll_joint"]
+# Unitree's R1 acts all 24 non-head joints; the head is held by its own PD.
+ACT_JOINTS = LEG_JOINTS + WAIST_JOINTS + SHOULDER_JOINTS + ARM_JOINTS
 FEET = ".*_ankle_roll_link"
 # The URDF import names the root body "pelvis_link" (the MuJoCo-converted asset calls it "pelvis").
 BASE = "pelvis_link"
@@ -42,6 +48,8 @@ BASE = "pelvis_link"
 # 0.25 * torque_limit / kp per joint (POLICY_CHECKLIST.md rule 1), not one scale for all.
 _SCALE_HIP_KNEE_WAIST = 0.25 * 60.0 / 100.0  # 0.15
 _SCALE_ANKLE = 0.25 * 50.0 / 40.0  # 0.3125
+_SCALE_SHOULDER = 0.25 * 60.0 / 40.0  # 0.375
+_SCALE_ARM = 0.25 * 33.0 / 20.0  # 0.4125
 ACTION_SCALE = {}
 for _side in ("left", "right"):
     for _j in ("hip_pitch", "hip_roll", "hip_yaw", "knee"):
@@ -50,6 +58,11 @@ for _side in ("left", "right"):
         ACTION_SCALE[f"{_side}_{_j}_joint"] = _SCALE_ANKLE
 for _j in WAIST_JOINTS:
     ACTION_SCALE[_j] = _SCALE_HIP_KNEE_WAIST
+for _side in ("left", "right"):
+    for _j in ("shoulder_pitch", "shoulder_roll"):
+        ACTION_SCALE[f"{_side}_{_j}_joint"] = _SCALE_SHOULDER
+    for _j in ("shoulder_yaw", "elbow", "wrist_roll"):
+        ACTION_SCALE[f"{_side}_{_j}_joint"] = _SCALE_ARM
 
 
 @configclass
@@ -139,12 +152,18 @@ class R1RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         if self.scene.height_scanner is not None:
             self.scene.height_scanner.prim_path = f"{{ENV_REGEX_NS}}/Robot/Geometry/{BASE}"
         # actions: legs and waist only
-        self.actions.joint_pos.joint_names = LEG_JOINTS + WAIST_JOINTS
+        self.actions.joint_pos.joint_names = ACT_JOINTS
         self.actions.joint_pos.scale = dict(ACTION_SCALE)
+        # observations: Unitree's R1 contract has a gait clock and no base linear velocity (the real
+        # robot has no sensor for it), and looks at the 24 actuated joints rather than all 26.
+        self.observations.policy.base_lin_vel = None
+        self.observations.policy.gait_phase = ObsTerm(func=r1_mdp.gait_phase, params={"period": 0.6})
+        self.observations.policy.joint_pos.params["asset_cfg"] = SceneEntityCfg("robot", joint_names=ACT_JOINTS)
+        self.observations.policy.joint_vel.params["asset_cfg"] = SceneEntityCfg("robot", joint_names=ACT_JOINTS)
         # commands
         self.commands.base_velocity.vel_yaw_success_threshold = 0.8
         self.commands.base_velocity.marker_pos_offset = (0.0, 0.0, 0.6)
-        self.commands.base_velocity.ranges.lin_vel_x = (0.0, 1.0)
+        self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 1.0)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.0, 0.0)
         self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
         # rewards
@@ -187,7 +206,7 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         # observations
         self.observations.policy.height_scan = None
         # commands
-        self.commands.base_velocity.ranges.lin_vel_x = (0.0, 1.0)
+        self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 1.0)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
         self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
         # rewards
@@ -203,3 +222,5 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         )
         # curriculum
         self.curriculum.terrain_levels = None
+
+
