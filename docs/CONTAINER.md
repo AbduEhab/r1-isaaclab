@@ -1,95 +1,97 @@
 # The container
 
-A Linux image holding the same stack this machine runs on Windows: **Isaac Sim 6.2.0, Isaac Lab
-v3.0.0, this repository and `labd`**. It is the reproducible answer to "the setup script has
-errors": the versions are pinned in the image, so a machine either has the image or it does not.
+An **environment-only** image: Isaac Sim 6.2.0 + Isaac Lab v3.0.0, pinned. No project code, no
+daemon. The repository is mounted at run time, the same way you would use it on Windows.
 
-The Windows binary install cannot be containerised — Isaac Sim containers are Linux — so the image
-is built from NVIDIA's official `nvcr.io/nvidia/isaac-sim:6.2.0` and installs Isaac Lab inside it
-exactly as the Windows machine does (editable packages into Isaac Sim's bundled Python, no
-separate environment to activate).
+The reason for the image is reproducibility: Isaac Sim plus its Python stack is the expensive,
+version-sensitive part. The task config changes every experiment; it does not belong in an image.
+
+| Piece | Where |
+|---|---|
+| Isaac Sim 6.2.0 (official container, Linux) | image |
+| Isaac Lab v3.0.0 + torch cu130 + Newton + RSL-RL | image |
+| `r1-isaaclab` (asset, rewards, `scripts/train.py`) | bind mount |
+| Checkpoints, TensorBoard events | host directory or volume |
+
+The Windows binary install cannot be containerised — Isaac Sim containers are Linux — but this is
+the same stack: same Isaac Sim version, same Isaac Lab tag, same task ids and the same action /
+observation contract, so checkpoints move between them freely.
 
 ## Build
 
 ```powershell
 # from the repository root
-docker build -f docker/Dockerfile -t r1-isaaclab:6.2 .
+docker build -f docker/Dockerfile -t isaac-env:6.2 .
 ```
 
-- First pull is Isaac Sim's image (~8 GB), then the image build downloads Isaac Lab's dependencies
-  (torch cu130, Newton, RSL-RL; several GB). Expect **1–2 hours** and **~35 GB** of disk.
-- `docker build --progress=plain` shows the long `isaaclab.sh --install` step line by line.
+- First pull is Isaac Sim's image (~8 GB), then the build downloads Isaac Lab's dependencies
+  (several GB). Expect **1–2 hours** and **~35 GB** on the first build.
+- `--progress=plain` shows the `isaaclab.sh --install` step line by line.
+- After that, changes to our repository need no rebuild at all.
 
 ## Run
 
 ```powershell
-docker run --gpus all -p 8080:8080 -v r1-artifacts:/artifacts r1-isaaclab:6.2
+docker run --gpus all -it -v ${PWD}:/workspace isaac-env:6.2
 ```
 
-then open `http://<machine>:8080` — the same queue page as `labd.exe`, with jobs running inside the
-container. Artifacts land in the `r1-artifacts` volume:
+That drops you into bash with the repository at `/workspace`. Isaac Lab is at `/opt/IsaacLab`; its
+bundled Python is what `isaaclab.sh -p` uses.
+
+Train the R1 flat task, exactly as on Windows:
+
+```bash
+cd /opt/IsaacLab
+./isaaclab.sh -p /workspace/scripts/train.py \
+  --rl_library rsl_rl --task Isaac-Velocity-Flat-R1 \
+  --viz none --num_envs 2048 --max_iterations 1500
+```
+
+Play a checkpoint (headless; there is no GUI in the container):
+
+```bash
+./isaaclab.sh -p /workspace/scripts/play.py \
+  --rl_library rsl_rl --task Isaac-Velocity-Flat-R1 \
+  --checkpoint /workspace/models/r1_flat_1500it/model_1499.pt --viz none
+```
+
+Or with compose (adds the Kit shader caches so restarts do not recompile shaders):
 
 ```powershell
-docker run --rm -v r1-artifacts:/artifacts -v ${PWD}:/out alpine cp -r /artifacts/. /out/
+docker compose -f docker/docker-compose.yml run --rm isaac
 ```
 
-Or with compose (adds the Kit caches so restarts don't recompile shaders):
+## Does the R1 task work from a mount?
 
-```powershell
-docker compose -f docker/docker-compose.yml up -d --build
-```
-
-## What is inside
-
-| Layer | Content |
-|---|---|
-| `nvcr.io/nvidia/isaac-sim:6.2.0` | Isaac Sim 6.2, its bundled Python 3.12, CUDA stack |
-| `/opt/IsaacLab` | Isaac Lab v3.0.0 (repo), `_isaac_sim` → `/isaac-sim`, packages installed editable, Newton + RL extras |
-| `/opt/r1-isaaclab` | this repository: task, asset, scripts |
-| `/usr/local/bin/labd` | the queue daemon, built for Linux in a Rust stage |
-| `/artifacts` | finished runs (checkpoints, `params/*.yaml`, TensorBoard events) |
-
-`ENTRYPOINT` is `labd` with `--repo /opt/r1-isaaclab --isaaclab /opt/IsaacLab --artifacts /artifacts`,
-so the image *is* the training server.
+Yes. Nothing in the task is installed: `scripts/train.py` puts the repository root on `sys.path` and
+imports `r1_isaaclab`, and the USD asset (9 MB, in `assets/r1`) is referenced with relative
+payloads (`@./payloads/...@`), so it loads from any path. There are no absolute host paths in the
+code — the asset path is derived from `Path(__file__)`. (The only Windows path in the tree is inside
+a USD `doc` metadata string, which has no effect.)
 
 ## Differences from the Windows setup
 
-| | Windows (this machine) | Container |
+| | Windows | Container |
 |---|---|---|
 | Isaac Sim | binary zip | official container image |
 | Isaac Lab install | `isaaclab.bat --install` | `isaaclab.sh --install newton,rl` |
 | Python | bundled 3.12 | bundled 3.12 (same) |
-| GUI / `--viz kit` | possible | not available; training is headless (`--viz none`) |
-| Video capture | failed with a Kit extension error | possible via `--video`, but headless UI is not |
-
-Training and the R1 task config are identical: same task ids, same oracle of actions/observations,
-same checkpoints (RSL-RL `.pt` files are portable).
+| GUI / `--viz kit` | possible | not available; train headless (`--viz none`) |
+| `labd` queue | `labd.exe` on the host | not in this image; run it on the host if you want the web queue |
+| Task code | working tree | bind mount |
 
 ## GPU requirements
 
-The host needs a working NVIDIA driver and the Docker GPU runtime:
-
 - **Linux**: `nvidia-container-toolkit`, then `docker run --gpus all`.
-- **Windows**: Docker Desktop with the WSL2 backend and an NVIDIA driver; `--gpus all` works in WSL2.
-  Validate with `docker run --rm --gpus all nvidia/cuda:12.6.3-base-ubuntu22.04 nvidia-smi`.
+- **Windows**: Docker Desktop with the WSL2 backend; `--gpus all` works in WSL2. Validate with
+  `docker run --rm --gpus all nvidia/cuda:12.6.3-base-ubuntu22.04 nvidia-smi`.
 
-Isaac Sim needs roughly 8 GB of video memory for a single training instance; our 2048-env run used
-under 2 GB on the A5000, so the RTX 5090 has ample headroom.
+Isaac Sim wants roughly 8 GB of VRAM for one instance. Our 2048-env A5000 run used under 2 GB, so
+an RTX 5090 has room for 4096–8192 envs.
 
-## Rebuilding after a code change
+## Notes
 
-Task code is baked in, so after changing `r1_isaaclab/` rebuild the top layer only (it is last, the
-expensive install layers stay cached):
-
-```powershell
-docker build -f docker/Dockerfile -t r1-isaaclab:6.2 .
-```
-
-To iterate on task code without rebuilding, mount it over the copy:
-
-```powershell
-docker run --gpus all -p 8080:8080 -v ${PWD}:/opt/r1-isaaclab r1-isaaclab:6.2
-```
-
-`labd` serves `/jobs/{id}/artifacts/...` from `/artifacts`; the log drawer streams through the same
-SSE endpoint. No authentication, as with the Windows binary: keep it on the LAN.
+- `CMDLINE` default is `/bin/bash`; nothing starts by itself.
+- The image is headless: no `--viz kit`, no video capture.
+- GPU memory is not shared with the Windows host install: stop the Windows sim before training in
+  the container, or the second process will contend for the GPU.
