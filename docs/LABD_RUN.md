@@ -3,6 +3,18 @@
 `labd.exe` is a single file: an HTTP server with an in-memory training queue. It runs the sims on
 the machine it is started on, one job at a time, and serves a page the team opens by URL.
 
+**Fastest path:** the one-shot setup puts Isaac Sim, Isaac Lab, this repository, `labd` and its
+artifacts under one root, then verifies the stack with a two-iteration run:
+
+```powershell
+.\scripts\setup-isaac.ps1 -IsaacSimZip D:\downloads\isaac-sim-6.2.0.zip
+#   or, reusing an Isaac Sim already installed:
+.\scripts\setup-isaac.ps1 -IsaacSimPath C:\isaac-sim
+```
+
+It creates `<Root>\start-labd.cmd` (default root `C:\isaac`); run that and open
+`http://<machine>:8080`. The manual steps are below for reference.
+
 Design and interface: [LABD.md](LABD.md) · [LABD_UI.md](LABD_UI.md).
 
 ## What the machine needs (once)
@@ -25,9 +37,9 @@ Design and interface: [LABD.md](LABD.md) · [LABD_UI.md](LABD_UI.md).
 ## Start it
 
 ```powershell
-C:\tools\labd\labd.exe ^
-  --repo C:\tools\r1-isaaclab ^
-  --isaaclab C:\tools\IsaacLab ^
+C:\tools\labd\labd.exe `
+  --repo C:\tools\r1-isaaclab `
+  --isaaclab C:\tools\IsaacLab `
   --port 8080
 ```
 
