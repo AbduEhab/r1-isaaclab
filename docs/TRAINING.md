@@ -67,6 +67,20 @@ isaaclab.bat -p -m tensorboard --logdir C:\path\to\IsaacLab\logs\rsl_rl\r1_flat
 
 A full 1500-iteration flat run is therefore roughly **2 hours** on the A5000.
 
+## Watching a trained policy
+
+```powershell
+isaaclab.bat -p C:\path\to\r1-isaaclab\scripts\play.py `
+  --rl_library rsl_rl --task Isaac-Velocity-Flat-R1 `
+  --checkpoint C:\path\to\r1-isaaclab\models\r1_flat_100it\model_99.pt `
+  --num_envs 16 --real-time --viz kit
+```
+
+- `--viz kit` opens the Isaac Sim viewport (omit it or use `--viz none` for headless).
+- `--checkpoint` takes a path, or `latest` / `best` / `pretrained`.
+- `--num_envs 16` keeps the view readable; the policy was trained with thousands.
+- `--real-time` paces the simulation to wall-clock time.
+
 ## Changing the task
 
 - Rewards, commands, terminations: `r1_isaaclab/env_cfg.py`.
