@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Build products of the asset pipeline (the built USD is committed under assets/)
+build/
+
+# Local runs and logs
+logs/
+outputs/
+
+# Editors
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
