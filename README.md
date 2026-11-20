@@ -16,8 +16,23 @@ library ships A1, Go1, Go2, H1 and G1 — there is no R1, so this repository pro
 | R1 asset config (gains, limits, armature) | done — the R1's table, not the G1's |
 | `Isaac-Velocity-Flat-R1` task | done — trains headless |
 | 100-iteration reference run (2048 envs) | done — 461 s, episode length 13 → 982 of 1000 — [results](docs/RESULTS.md) |
-| Full 1500-iteration policy | **not trained yet** — the reference run shows the pipeline works |
+| Full 1500-iteration policy | **done — see `models/r1_flat_1500it`** |
 | Deployment to the real robot (`deploy.yaml`) | not started — needs the export step |
+
+### The trained policy
+
+`models/r1_flat_1500it/` holds the first R1 locomotion policy trained in Isaac Lab: 2048
+environments, 1500 PPO iterations, 1 h 30 min on the RTX A5000.
+
+| Metric | Iteration 0 | Iteration 1499 | Last 50 (mean) |
+|---|---|---|---|
+| Mean reward | −0.07 | +20.73 | **+20.56** |
+| Mean episode length | 13 | 994 | **999.1 / 1000** |
+| Velocity error xy | 0.642 m/s | 0.191 m/s | **0.193 m/s** |
+| Yaw-rate error | 2.437 rad/s | 0.529 rad/s | **0.528 rad/s** |
+
+Watch it with `scripts/play.py` (see [docs/TRAINING.md](docs/TRAINING.md#watching-a-trained-policy));
+limits and the full trend are in [models/r1_flat_1500it/README.md](models/r1_flat_1500it/README.md).
 
 Documentation: [install](docs/INSTALL.md) · [asset](docs/ASSET.md) · [task](docs/TASK.md) ·
 [training](docs/TRAINING.md) · [results](docs/RESULTS.md) · [troubleshooting](docs/TROUBLESHOOTING.md)
