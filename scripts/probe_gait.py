@@ -42,6 +42,7 @@ def main() -> int:
     parser.add_argument("--num_envs", type=int, default=8)
     parser.add_argument("--steps", type=int, default=500, help="control steps (0.02 s each)")
     parser.add_argument("--vx", type=float, default=0.5)
+    parser.add_argument("--wz", type=float, default=0.0, help="yaw rate command, rad/s")
     parser.add_argument("--device", default="cuda:0")
     args = parser.parse_args()
 
@@ -66,24 +67,41 @@ def main() -> int:
     obs = out[0] if isinstance(out, tuple) else out
 
     command_term = unwrapped.command_manager.get_term("base_velocity")
-    states = {"vx": [], "height": [], "left": [], "right": []}
+    states = {"vx": [], "height": [], "left": [], "right": [], "wz": [], "vy": [], "yaw": []}
 
-    for _ in range(args.steps):
+    print("command term type:", type(command_term).__name__)
+    for step_i, _ in enumerate(range(args.steps)):
         command = command_term.command.clone()
         command[:, 0] = args.vx
         command[:, 1] = 0.0
-        command[:, 2] = 0.0
+        command[:, 2] = args.wz
+        # The command manager rewrites `command` from its internal buffer every step, so the
+        # buffer is what must be set, not the public tensor.
+        if hasattr(command_term, "vel_command_b"):
+            command_term.vel_command_b[:] = command
         command_term.command[:] = command
 
         with torch.inference_mode():
             actions = policy(obs)
         out = vec_env.step(actions)
         obs = out[0]
+        if step_i in (0, 1, 50):
+            print(f"  step {step_i}: env command = {command_term.command[0].tolist()}, policy-action mean {actions.mean().item():+.3f}")
 
         states["vx"].append(robot.data.root_lin_vel_b.torch[0, 0].item())
         states["height"].append(robot.data.root_pos_w.torch[0, 2].item())
         states["left"].append(robot.data.joint_pos.torch[0, left_ankle].item())
         states["right"].append(robot.data.joint_pos.torch[0, right_ankle].item())
+        states["wz"].append(robot.data.root_ang_vel_b.torch[0, 2].item())
+        states["vy"].append(robot.data.root_lin_vel_b.torch[0, 1].item())
+        quat = robot.data.root_quat_w.torch[0]
+        w, x, y, z = quat[0].item(), quat[1].item(), quat[2].item(), quat[3].item()
+        yaw_now = math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z))
+        if states["yaw"]:
+            delta = yaw_now - states["yaw"][-1]
+            delta = (delta + math.pi) % (2 * math.pi) - math.pi  # unwrap
+            states.setdefault("yaw_total", []).append(delta)
+        states["yaw"].append(yaw_now)
 
     dt = unwrapped.step_dt
     mean_vx = sum(states["vx"]) / len(states["vx"])
@@ -115,12 +133,27 @@ def main() -> int:
     print(f"ankle amplitude left {max(left) - min(left):.3f} rad, right {max(right) - min(right):.3f} rad")
     print(f"left/right ankle correlation {correlation:+.3f}   (walk: < 0, hop: > 0, stand: ~0)")
     print(f"step frequency  {frequency:.2f} Hz")
+    if args.wz:
+        mean_wz = sum(states["wz"]) / len(states["wz"])
+        mean_abs_wz = sum(abs(v) for v in states["wz"]) / len(states["wz"])
+        mean_vy = sum(abs(v) for v in states["vy"]) / len(states["vy"])
+        yaw_delta = sum(states.get("yaw_total", []))
+        print(f"command wz      {args.wz} rad/s")
+        print(f"yaw rate        mean {mean_wz:+.3f}, mean |wz| {mean_abs_wz:.3f} rad/s (command {args.wz})")
+        print(f"mean |vy|       {mean_vy:.3f} m/s  (strafing if large)")
+        print(f"heading change  {yaw_delta:+.2f} rad over {args.steps * dt:.1f} s")
     env.close()
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+
+
+
+
 
 
 

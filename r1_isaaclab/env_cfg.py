@@ -179,6 +179,11 @@ class R1RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.commands.base_velocity.marker_pos_offset = (0.0, 0.0, 0.6)
         self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 1.0)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.0, 0.0)
+        # The base velocity task ships with heading_command=True: the yaw "command" is then
+        # 0.5 * heading error, recomputed every step, not a rate the policy must follow. Stock G1
+        # flat turns it off; we inherited it, which is why the policy never learned a real turn.
+        self.commands.base_velocity.heading_command = False
+        self.commands.base_velocity.rel_heading_envs = 0.0
         # Wider yaw range: commands now ask for real turns (up to 1.5 rad/s, ~86 deg/s).
         self.commands.base_velocity.ranges.ang_vel_z = (-1.5, 1.5)
         # rewards
@@ -225,6 +230,11 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         # commands
         self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 1.0)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
+        # The base velocity task ships with heading_command=True: the yaw "command" is then
+        # 0.5 * heading error, recomputed every step, not a rate the policy must follow. Stock G1
+        # flat turns it off; we inherited it, which is why the policy never learned a real turn.
+        self.commands.base_velocity.heading_command = False
+        self.commands.base_velocity.rel_heading_envs = 0.0
         # Wider yaw range: commands now ask for real turns (up to 1.5 rad/s, ~86 deg/s).
         self.commands.base_velocity.ranges.ang_vel_z = (-1.5, 1.5)
         # rewards
@@ -244,6 +254,7 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         )
         # curriculum
         self.curriculum.terrain_levels = None
+
 
 
 
