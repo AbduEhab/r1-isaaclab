@@ -1,0 +1,7 @@
+﻿FROM isaac-env:6.2
+# Video recording needs moviepy; Isaac Sim's Python is the interpreter the task uses.
+RUN --mount=type=secret,id=corp_ca \
+    if [ -s /run/secrets/corp_ca ]; then \
+        cp /run/secrets/corp_ca /usr/local/share/ca-certificates/corp-ca.crt && update-ca-certificates; \
+    fi && \
+    /isaac-sim/python.sh -m pip install --no-cache-dir "moviepy<2" imageio-ffmpeg

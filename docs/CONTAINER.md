@@ -1,4 +1,4 @@
-# The container
+﻿# The container
 
 An **environment-only** image: Isaac Sim 6.2.0 + Isaac Lab v3.0.0, pinned. No project code, no
 daemon. The repository is mounted at run time, exactly as it is used on Windows.
@@ -25,7 +25,7 @@ docker build -f docker/Dockerfile -t isaac-env:6.2 .
 ```
 
 - First pull is NVIDIA's Isaac Sim image (31.9 GB compressed layers), then the build downloads Isaac
-  Lab's dependencies (several GB). Expect **30–90 minutes** and **48 GB** for the final image.
+  Lab's dependencies (several GB). Expect **30â€“90 minutes** and **48 GB** for the final image.
 - `--progress=plain` shows the `isaaclab.sh --install` step line by line.
 - After the install layer is cached, changes to the Dockerfile's end or to our repository need no
   rebuild; keep edits above the install step to a minimum.
@@ -71,7 +71,7 @@ cd /opt/IsaacLab
   --viz none --num_envs 2048 --max_iterations 1500
 ```
 
-Play a checkpoint (headless — the image has no GUI):
+Play a checkpoint (headless â€” the image has no GUI):
 
 ```bash
 ./isaaclab.sh -p /workspace/scripts/play.py \
@@ -112,7 +112,7 @@ macOS cannot run it.
 
 Yes. Nothing in the task is installed: `scripts/train.py` puts the repository root on `sys.path` and
 imports `r1_isaaclab`, and the USD asset references its payloads relatively (`@./payloads/...@`), so
-it loads from any path. There are no absolute host paths in the code — the asset path comes from
+it loads from any path. There are no absolute host paths in the code â€” the asset path comes from
 `Path(__file__)`. The only Windows path in the tree is inside a USD `doc` metadata string, which has
 no effect.
 
@@ -134,4 +134,18 @@ no effect.
 - GPU memory is per machine: stop the Windows sim before training in the container, or the two
   contend for the GPU.
 - Isaac Sim wants roughly 8 GB of VRAM for one instance; our 2048-env A5000 run used under 2 GB, so
-  an RTX 5090 has room for 4096–8192 envs.
+  an RTX 5090 has room for 4096â€“8192 envs.
+
+## Recording video (no GUI needed)
+
+The container can render clips headless through the Newton OpenGL visualizer:
+
+```powershell
+docker run --rm --gpus all -v <repo>:/workspace isaac-env:6.2-video /bin/bash -lc `
+  "cd /workspace && /opt/IsaacLab/isaaclab.sh -p /workspace/scripts/play.py --rl_library rsl_rl `
+   --task Isaac-Velocity-Flat-R1 --checkpoint /workspace/models/r1_flat_4500it/model_4499.pt `
+   --num_envs 4 --viz newton --video --video_length 300"
+```
+
+`isaac-env:6.2-video` is `isaac-env:6.2` plus `moviepy<2`, built from
+`docker/Dockerfile.video` with `--secret id=corp_ca,src=C:\certs\corporate-roots.pem`.

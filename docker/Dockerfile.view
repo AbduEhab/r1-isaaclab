@@ -1,0 +1,6 @@
+﻿FROM isaac-env:6.2
+# Isaac Lab's pip install upgraded the USD Python bindings (pxr) inside Isaac Sim's site-packages,
+# which no longer matches Kit's C++ USD and breaks the RTX hydra plugin (undefined pxr symbols) and
+# therefore rendering/livestream. Restore the bindings that shipped with the Isaac Sim image.
+RUN rm -rf /isaac-sim/kit/python/lib/python3.12/site-packages/pxr.pip-shadow
+COPY pxr-base /isaac-sim/kit/python/lib/python3.12/site-packages/pxr

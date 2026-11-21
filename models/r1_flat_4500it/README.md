@@ -48,3 +48,21 @@ docker run --rm --gpus all -v <repo>:/workspace isaac-env:6.2 /bin/bash -lc `
 `params/env.yaml` is the fully resolved environment config of the training run; it is the record of
 exactly what produced this checkpoint.
 
+
+## Video
+
+Recorded headless in the container through the Newton OpenGL visualizer (no RTX, no display):
+
+`videos/play/clip_model_4499_0000.mp4` and `clip_model_4499_0001.mp4` (1920x1080, 50 fps, 4 s
+clips), with stills in `videos/play/frames/`.
+
+```powershell
+docker run --rm --gpus all -v C:\per\thesis\r1-isaaclab:/workspace isaac-env:6.2-video /bin/bash -lc `
+  "cd /workspace && /opt/IsaacLab/isaaclab.sh -p /workspace/scripts/play.py --rl_library rsl_rl `
+   --task Isaac-Velocity-Flat-R1 --checkpoint /workspace/models/r1_flat_4500it/model_4499.pt `
+   --num_envs 4 --viz newton --video --video_length 300"
+```
+
+`isaac-env:6.2-video` is `isaac-env:6.2` plus `moviepy<2` (the recorder dependency). The Newton
+visualizer runs headless via EGL; CUDA/OpenGL interop is unavailable, so it falls back to copies —
+slower, but the frames are correct.
