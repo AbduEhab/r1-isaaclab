@@ -6,8 +6,8 @@ terms, events and curriculum are the ones NVIDIA trains with, but with:
 * the R1 asset (rebuilt from the team's ``urdf/R1.urdf``, see ``docs/ASSET.md``),
 * the R1's body and joint names,
 * the R1's gains and limits from the team's POLICY_CHECKLIST.md (see ``asset.py``),
-* the per-joint action scale ``0.25 * torque_limit / kp`` Ã¢â‚¬â€ 0.15 rad per unit for hips, knees and
-  waist, 0.31 for ankles Ã¢â‚¬â€ instead of one value for every joint.
+* the per-joint action scale ``0.25 * torque_limit / kp`` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â 0.15 rad per unit for hips, knees and
+  waist, 0.31 for ankles ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â instead of one value for every joint.
 
 Only the 12 leg joints and the 2 waist joints are actuated (action shape 14). The arms and head
 hold their default pose through their own actuators, as they do on the robot while it walks.
@@ -101,10 +101,19 @@ class R1Rewards(RewardsCfg):
         weight=-1.0,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_ankle_pitch_joint", ".*_ankle_roll_joint"])},
     )
+    # Hip roll only: penalising hip *yaw* deviation discourages the very joint that turns the robot,
+    # which teaches it to strafe instead of rotating. G1's stock config includes hip yaw; the R1's
+    # narrower stance cannot afford that shortcut, so yaw stays free here.
     joint_deviation_hip = RewTerm(
         func=mdp.joint_deviation_l1,
         weight=-0.1,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_hip_yaw_joint", ".*_hip_roll_joint"])},
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_hip_roll_joint"])},
+    )
+    # Anti-strafe term: pays nothing while moving straight, penalises sideways speed during a turn.
+    lateral_vel_when_turning = RewTerm(
+        func=r1_mdp.lateral_velocity_when_turning,
+        weight=-1.0,
+        params={"command_name": "base_velocity"},
     )
     joint_deviation_arms = RewTerm(
         func=mdp.joint_deviation_l1,
@@ -170,7 +179,8 @@ class R1RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.commands.base_velocity.marker_pos_offset = (0.0, 0.0, 0.6)
         self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 1.0)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.0, 0.0)
-        self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
+        # Wider yaw range: commands now ask for real turns (up to 1.5 rad/s, ~86 deg/s).
+        self.commands.base_velocity.ranges.ang_vel_z = (-1.5, 1.5)
         # rewards
         self.rewards.lin_vel_z_l2.weight = 0.0
         self.rewards.undesired_contacts = None
@@ -215,20 +225,26 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         # commands
         self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 1.0)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
-        self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
+        # Wider yaw range: commands now ask for real turns (up to 1.5 rad/s, ~86 deg/s).
+        self.commands.base_velocity.ranges.ang_vel_z = (-1.5, 1.5)
         # rewards
-        self.rewards.track_ang_vel_z_exp.weight = 1.0
+        # Turning was under-valued: yaw error now costs twice as much as linear error, and the
+        # lateral-velocity penalty above removes the strafe-instead-of-turn shortcut.
+        self.rewards.track_ang_vel_z_exp.weight = 2.0
         self.rewards.lin_vel_z_l2.weight = -0.2
         self.rewards.action_rate_l2.weight = -0.005
         self.rewards.dof_acc_l2.weight = -1.0e-7
         self.rewards.feet_air_time.weight = 0.75
         self.rewards.feet_air_time.params["threshold"] = 0.4
+        # Strafing is usually skating: punish sliding feet harder so turning is done by stepping.
+        self.rewards.feet_slide.weight = -0.25
         self.rewards.dof_torques_l2.weight = -2.0e-6
         self.rewards.dof_torques_l2.params["asset_cfg"] = SceneEntityCfg(
             "robot", joint_names=[".*_hip_.*", ".*_knee_joint"]
         )
         # curriculum
         self.curriculum.terrain_levels = None
+
 
 
 
