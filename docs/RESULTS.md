@@ -109,3 +109,29 @@ docker run --rm --gpus all -v <repo>:/workspace isaac-env:6.2 /bin/bash -lc `
 - Rough-terrain task.
 - Sim-to-real, and the `deploy.yaml` export the team's POLICY_CHECKLIST requires.
 
+
+## Turning (v4): 1500 iterations with heading control fixed
+
+The base velocity task ships with `heading_command=True` (yaw command = 0.5 x heading error), which
+our task inherited; stock G1 flat disables it. With it disabled, `ang_vel_z` is a real command in
+±1.5 rad/s, and the reward set was retuned (hip yaw unpenalised, `lateral_velocity_when_turning`,
+yaw weight 2.0, `feet_slide` -0.25).
+
+`models/r1_flat_turn2_1500it`, 1500 iterations, 8192 envs, 7105 s:
+
+| Metric | Value |
+|---|---|
+| Reward | +38.35 |
+| Velocity error xy | 0.195 m/s |
+| Yaw rate error | **0.255 rad/s** |
+| `track_ang_vel_z_exp` | 1.507 / 2.0 |
+| `feet_air_time` | 0.0027 |
+
+Probe, command `vx=0, wz=1.0`: yaw rate **1.048 rad/s**, heading **+10.59 rad in 10 s**, lateral
+speed 0.028 m/s, but ankle correlation **+0.64** and step frequency 5.7 Hz: it turns by **pivoting**,
+not by stepping. The older 4500-iteration policy turns at 0.933 rad/s while **stepping** (ankle
+correlation -0.47, 1.2 Hz, `feet_air_time` 0.142).
+
+So: turning is solved, walking-while-turning is not clean yet. The next change should reward foot
+clearance during turns (the anti-strafe and foot-slide penalties alone are satisfied by twisting on
+planted feet).

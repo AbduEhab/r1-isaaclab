@@ -25,6 +25,7 @@ import r1_isaaclab  # noqa: F401,E402  (registers the task)
 
 import gymnasium as gym  # noqa: E402
 from isaaclab_rl.rsl_rl import RslRlVecEnvWrapper, create_rsl_rl_runner, handle_deprecated_rsl_rl_cfg  # noqa: E402
+from isaaclab.utils.math import euler_xyz_from_quat  # noqa: E402
 from isaaclab_tasks.utils import parse_env_cfg  # noqa: E402
 from importlib.metadata import version as _pkg_version  # noqa: E402
 
@@ -94,9 +95,9 @@ def main() -> int:
         states["right"].append(robot.data.joint_pos.torch[0, right_ankle].item())
         states["wz"].append(robot.data.root_ang_vel_b.torch[0, 2].item())
         states["vy"].append(robot.data.root_lin_vel_b.torch[0, 1].item())
-        quat = robot.data.root_quat_w.torch[0]
-        w, x, y, z = quat[0].item(), quat[1].item(), quat[2].item(), quat[3].item()
-        yaw_now = math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z))
+        quat = robot.data.root_quat_w.torch[0].unsqueeze(0)
+        roll, pitch, yaw = euler_xyz_from_quat(quat)
+        yaw_now = yaw[0].item()
         if states["yaw"]:
             delta = yaw_now - states["yaw"][-1]
             delta = (delta + math.pi) % (2 * math.pi) - math.pi  # unwrap
@@ -141,13 +142,16 @@ def main() -> int:
         print(f"command wz      {args.wz} rad/s")
         print(f"yaw rate        mean {mean_wz:+.3f}, mean |wz| {mean_abs_wz:.3f} rad/s (command {args.wz})")
         print(f"mean |vy|       {mean_vy:.3f} m/s  (strafing if large)")
-        print(f"heading change  {yaw_delta:+.2f} rad over {args.steps * dt:.1f} s")
+        print(f"heading change  {yaw_delta:+.2f} rad over {args.steps * dt:.1f} s (samples {len(states.get('yaw_total', []))}, yaw first {states['yaw'][0]:+.2f} last {states['yaw'][-1]:+.2f})")
     env.close()
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+
 
 
 
