@@ -1,4 +1,4 @@
-# r1_flat_4500it — walking policy
+﻿# r1_flat_4500it â€” walking policy
 
 Trained on 2026-11-21, 4500 PPO iterations, 8192 environments, batch 393k
 (`num_steps_per_env = 48`), 5.5 h on an RTX A5000.
@@ -12,7 +12,9 @@ Trained on 2026-11-21, 4500 PPO iterations, 8192 environments, batch 393k
 | `track_lin_vel_xy_exp` | 0.931 / 1.0 |
 | `track_ang_vel_z_exp` | 0.798 / 1.0 |
 | `feet_air_time` reward | 0.142 (v2, which stood still, was 0.0009) |
-| `flat_orientation_l2` penalty | −0.0055 (upright) |
+| `flat_orientation_l2` penalty | âˆ’0.0055 (upright) |
+
+Measured gait (scripts/probe_gait.py, fixed command 0.5 m/s, 10 s): forward speed **+0.475 m/s**, base height 0.707 m (std 0.0094), ankle correlation **-0.17** (alternating), step frequency **1.15 Hz**.
 
 This is the first R1 policy here that tracks velocity while stepping. Compare with the earlier
 runs in the repository (see `docs/RESULTS.md` for the full table).
@@ -45,3 +47,4 @@ docker run --rm --gpus all -v <repo>:/workspace isaac-env:6.2 /bin/bash -lc `
 
 `params/env.yaml` is the fully resolved environment config of the training run; it is the record of
 exactly what produced this checkpoint.
+

@@ -1,4 +1,4 @@
-# Results
+﻿# Results
 
 All numbers were measured on **Windows 11**, **Isaac Sim 6.2.0**, **Isaac Lab v3.0.0** (repository
 install), **PyTorch 2.11.0+cu130**, **Newton 1.6.1**, **RTX A5000 Laptop (16 GB)**. The 4500-iteration
@@ -8,13 +8,13 @@ run was trained inside the `isaac-env:6.2` container on the same machine.
 
 | | v1: 14 actions | v2: 24 actions, no base linear velocity | v3: 24 actions + base linear velocity |
 |---|---|---|---|
-| Checkpoint | `models/r1_flat_1500it` | — (superseded, not kept) | **`models/r1_flat_4500it`** |
+| Checkpoint | `models/r1_flat_1500it` | â€” (superseded, not kept) | **`models/r1_flat_4500it`** |
 | Envs / batch | 2048 / 49k | 2048 / 49k | **8192 / 393k** |
 | Iterations | 1500 | 1500 | **4500** |
-| Mean reward | +20.7 | −6.7 | **+33.25** |
+| Mean reward | +20.7 | âˆ’6.7 | **+33.25** |
 | Velocity error xy | 0.193 m/s | 0.549 m/s | **0.115 m/s** |
 | Yaw rate error | 0.528 rad/s | 1.161 rad/s | **0.219 rad/s** |
-| `feet_air_time` | some (it hopped) | **0.0009 — never steps** | **0.142 — steps** |
+| `feet_air_time` | some (it hopped) | **0.0009 â€” never steps** | **0.142 â€” steps** |
 | Behaviour | hopped in place | stood still | **walks and tracks commands** |
 
 ## Framework sanity check (before the R1)
@@ -33,7 +33,7 @@ NVIDIA's stock humanoid task, to prove the environment:
 | R1 task constructs in Isaac Lab | Newton/MuJoCo-Warp backend, 24 actions (head excluded) |
 | First run | 3 iterations, exit 0 |
 
-## v1 — 1500 iterations (committed under `models/r1_flat_1500it`)
+## v1 â€” 1500 iterations (committed under `models/r1_flat_1500it`)
 
 Isaac-Velocity-Flat-R1, 2048 envs, 1500 iterations, **5376 s (1 h 29.6 min)**, 3.53 s/iteration:
 
@@ -49,14 +49,14 @@ This policy tracked velocity but **hopped**: with a straight-legged home pose, 1
 phase, a symmetric bounce satisfied the velocity reward. The inputs needed for an alternating gait
 were missing.
 
-## v2 — the Unitree contract, 1500 iterations (superseded)
+## v2 â€” the Unitree contract, 1500 iterations (superseded)
 
 Same task with the reference inputs: crouched home pose, 24 actions, gait phase, no base linear
 velocity. It tracked **worse** (velocity error 0.549 m/s) and `feet_air_time` was 0.0009: the policy
 never lifted a foot. Without base linear velocity it cannot estimate its own speed, and standing
 still is the safe optimum.
 
-## v3 — 4500 iterations, walking (committed under `models/r1_flat_4500it`)
+## v3 â€” 4500 iterations, walking (committed under `models/r1_flat_4500it`)
 
 v2 contract plus base linear velocity restored, 8192 envs, `num_steps_per_env = 48` (batch 393k),
 4500 iterations, **19 845 s (5.5 h)**, ~4.1 s/iteration at the end:
@@ -78,12 +78,34 @@ Tracking converges by iteration ~1000 and then improves slowly; 4500 iterations 
 1500. The important change is the behaviour: `feet_air_time` above zero and a steady 1000-step
 episode length mean alternating steps, not a hop.
 
-Note: v3 uses base linear velocity as an observation (86 → 89 dims). A deployment needs a state
-estimator, or the term must be removed and the policy retrained — the same trade-off v2 ran into.
+Note: v3 uses base linear velocity as an observation (86 â†’ 89 dims). A deployment needs a state
+estimator, or the term must be removed and the policy retrained â€” the same trade-off v2 ran into.
+
+## Gait measurement for v3 (`scripts/probe_gait.py`)
+
+Headless check on the published checkpoint, fixed command `vx = 0.5 m/s`, 500 control steps (10 s),
+8 environments, measured in one environment:
+
+| Quantity | Value | Interpretation |
+|---|---|---|
+| Mean forward speed | **+0.475 m/s** | tracks the 0.5 m/s command |
+| Base height | 0.707 m, std 0.0094 m | upright and level, not bouncing |
+| Ankle pitch amplitude | left 0.67 rad, right 1.10 rad | both legs swing |
+| Left/right ankle correlation | **-0.17** | alternating gait (a hop would be positive) |
+| Step frequency | **1.15 Hz** | ~2.3 steps/s, a walking cadence |
+
+That is a walk, not the v1 hop and not the v2 stand. The probe is part of the repository:
+
+```powershell
+docker run --rm --gpus all -v <repo>:/workspace isaac-env:6.2 /bin/bash -lc `
+  "cd /workspace && /opt/IsaacLab/isaaclab.sh -p /workspace/scripts/probe_gait.py `
+   --checkpoint /workspace/models/r1_flat_4500it/model_4499.pt --vx 0.5"
+```
 
 ## Not measured yet
 
-- Video/visual confirmation of the v3 gait (the container is headless; GUI capture on Windows is
-  currently broken by an `omni.kit.widget.layers` error).
+- Video of the gait. `--video` needs a visualizer or a camera sensor, so it cannot run in the
+  headless container as is; the Windows GUI capture is broken by an `omni.kit.widget.layers` error.
 - Rough-terrain task.
 - Sim-to-real, and the `deploy.yaml` export the team's POLICY_CHECKLIST requires.
+
