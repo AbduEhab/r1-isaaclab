@@ -7,7 +7,10 @@ from isaaclab_rl.rsl_rl import RslRlMLPModelCfg, RslRlOnPolicyRunnerCfg, RslRlPp
 
 @configclass
 class R1RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
-    num_steps_per_env = 24
+    # Larger rollout per iteration: the PPO batch is num_envs * num_steps_per_env, and doubling the
+    # rollout is what turns extra VRAM into a bigger batch (the environment count alone only reduces
+    # gradient noise if the batch per env stays this small).
+    num_steps_per_env = 48
     max_iterations = 5000
     save_interval = 50
     experiment_name = "r1_rough"
