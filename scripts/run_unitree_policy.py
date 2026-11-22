@@ -1,4 +1,4 @@
-"""Run the public Unitree R1 policy (SpacemiT model zoo) inside our Isaac Lab task.
+﻿"""Run the public Unitree R1 policy (SpacemiT model zoo) inside our Isaac Lab task.
 
 The policy is an ONNX export with its contract in the file metadata:
 inputs 83 (base_ang_vel, projected_gravity, command, phase, joint_pos, joint_vel, actions),
@@ -61,11 +61,24 @@ def main() -> int:
     ap.add_argument("--steps", type=int, default=500)
     ap.add_argument("--num_envs", type=int, default=8)
     ap.add_argument("--device", default="cuda:0")
+    ap.add_argument("--video", action="store_true", help="record the clip through the Newton visualizer")
     args = ap.parse_args()
 
     policy = Policy(POLICY_DIR)
     env_cfg = parse_env_cfg(TASK, device=args.device, num_envs=args.num_envs)
     env_cfg.seed = 11
+    if args.video:
+        from isaaclab.envs import VideoRecorderCfg
+        from isaaclab_visualizers.newton import NewtonGLVisualizerCfg
+
+        env_cfg.sim.visualizer_cfgs = [NewtonGLVisualizerCfg()]
+        env_cfg.video_recorders = [
+            VideoRecorderCfg(
+                source="visualizer:newton",
+                output_dir=os.path.join(REPO, "models", "r1_reference", "videos"),
+                video_length=args.steps,
+            )
+        ]
     env = gym.make(TASK, cfg=env_cfg)
     unwrapped = env.unwrapped
     robot = unwrapped.scene["robot"]
@@ -149,3 +162,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
