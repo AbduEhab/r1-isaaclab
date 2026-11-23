@@ -135,3 +135,34 @@ correlation -0.47, 1.2 Hz, `feet_air_time` 0.142).
 So: turning is solved, walking-while-turning is not clean yet. The next change should reward foot
 clearance during turns (the anti-strafe and foot-slide penalties alone are satisfied by twisting on
 planted feet).
+
+## Gait shaping: from hop to step (`models/r1_flat_gait_6000it`)
+
+The velocity reward alone was satisfied by alternating one-leg hops: flight was free, no contact
+pattern was required, and the swing foot only had to move forward. Three reward terms fixed it
+(`r1_isaaclab/mdp.py`):
+
+- `contact_schedule` (+1.5): the gait clock requires left stance in the first half of the 0.6 s cycle
+  and right stance in the second, scoring +1 for a foot in the expected state and -1 otherwise.
+- `flight_phase_penalty` (-2.0): both feet airborne is penalised every step.
+- `swing_clearance` (+1.0): `min(foot height, 8 cm)` for the swing foot, so a step has to lift.
+- plus `feet_air_time` 0.75 -> 0.2 and `lin_vel_z_l2` -0.2 -> -1.0.
+
+Fine-tuned from `r1_flat_selfcoll_1000it` for 966 iterations (8192 envs, ~1 h 55 m); the reward
+plateaued at ~65, with `contact_schedule` at 1.27/1.5 and the flight penalty at zero.
+
+| Policy | both feet airborne | step length | swing height | speed @ 0.5 |
+|---|---|---|---|---|
+| `r1_flat_4500it` | 19.3 % | 0.234 m | 0.163 m | 0.500 m/s |
+| `r1_flat_selfcoll_1000it` | 17.7 % | 0.221 m | 0.152 m | 0.495 m/s |
+| **`r1_flat_gait_6000it`** | **3.9 %** | 0.157 m | 0.130 m | 0.467 m/s |
+
+Still single-support dominated (1.7 % double support), measured only at 0.5 m/s, and the policy still
+observes base linear velocity, so deployment needs a state estimator.
+
+## Not measured yet
+
+- Video of the gait. `--video` needs a visualizer or a camera sensor, so it cannot run in the
+  headless container as is; the Windows GUI capture is broken by an `omni.kit.widget.layers` error.
+- Rough-terrain task.
+- Sim-to-real, and the `deploy.yaml` export the team's POLICY_CHECKLIST requires.
