@@ -122,6 +122,29 @@ class R1Rewards(RewardsCfg):
             "threshold": 1.0,
         },
     )
+    # Gait shaping. The velocity reward alone is satisfied by a one-leg hop: the flight phase is
+    # free, no contact pattern is required, and the swing foot only has to move forward, not up.
+    contact_schedule = RewTerm(
+        func=r1_mdp.contact_schedule,
+        weight=0.0,
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=FEET),
+            "period": 0.6,
+        },
+    )
+    flight_phase_penalty = RewTerm(
+        func=r1_mdp.flight_phase_penalty,
+        weight=0.0,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=FEET)},
+    )
+    swing_clearance = RewTerm(
+        func=r1_mdp.swing_clearance,
+        weight=0.0,
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=FEET),
+            "asset_cfg": SceneEntityCfg("robot", body_names=FEET),
+        },
+    )
     # Anti-strafe term: pays nothing while moving straight, penalises sideways speed during a turn.
     lateral_vel_when_turning = RewTerm(
         func=r1_mdp.lateral_velocity_when_turning,
@@ -254,10 +277,17 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         # Turning was under-valued: yaw error now costs twice as much as linear error, and the
         # lateral-velocity penalty above removes the strafe-instead-of-turn shortcut.
         self.rewards.track_ang_vel_z_exp.weight = 2.0
-        self.rewards.lin_vel_z_l2.weight = -0.2
+        # vertical motion penalty set below (-1.0) as part of the anti-hop shaping
         self.rewards.action_rate_l2.weight = -0.005
         self.rewards.dof_acc_l2.weight = -1.0e-7
-        self.rewards.feet_air_time.weight = 0.75
+        # Was 0.75: paying for air time is part of why the policy hopped.
+        self.rewards.feet_air_time.weight = 0.2
+        # Gait shaping, the anti-hop fix.
+        self.rewards.contact_schedule.weight = 1.5
+        self.rewards.flight_phase_penalty.weight = -2.0
+        self.rewards.swing_clearance.weight = 1.0
+        # Hop = bouncing: make vertical motion expensive.
+        self.rewards.lin_vel_z_l2.weight = -1.0
         self.rewards.feet_air_time.params["threshold"] = 0.4
         # Strafing is usually skating: punish sliding feet harder so turning is done by stepping.
         self.rewards.feet_slide.weight = -0.25
@@ -267,6 +297,8 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         )
         # curriculum
         self.curriculum.terrain_levels = None
+
+
 
 
 
