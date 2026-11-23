@@ -1,8 +1,8 @@
-"""The R1 as an Isaac Lab asset: the Unitree R1, with Unitree's own R1 numbers.
+﻿"""The R1 as an Isaac Lab asset: the Unitree R1, with Unitree's own R1 numbers.
 
 The USD in ``assets/r1`` is built from the team's authoritative ``urdf/R1.urdf`` by Isaac Sim's
-URDF importer (see ``docs/ASSET.md``). It is a 26-revolute-joint humanoid — 12 legs, 2 waist,
-10 arms and 2 head joints — with a free base.
+URDF importer (see ``docs/ASSET.md``). It is a 26-revolute-joint humanoid â€” 12 legs, 2 waist,
+10 arms and 2 head joints â€” with a free base.
 
 The gains, torque limits and armature follow the team's ``POLICY_CHECKLIST.md`` rule 1 (the R1's
 table, never the G1's):
@@ -69,11 +69,13 @@ R1_CFG = ArticulationCfg(
         ),
         articulation_props=[
             PhysxArticulationCfg(
-                enabled_self_collisions=False,
+                # Self-collision on: without it the left and right legs pass through each other, which is
+                # exactly what the first walking policies learned to exploit.
+                enabled_self_collisions=True,
                 solver_position_iteration_count=8,
                 solver_velocity_iteration_count=4,
             ),
-            NewtonArticulationCfg(self_collision_enabled=False),
+            NewtonArticulationCfg(self_collision_enabled=True),
         ],
         variants=dict(PHYSICS_VARIANT),
     ),
@@ -107,3 +109,4 @@ R1_CFG = ArticulationCfg(
         "head_yaw": _actuator(["head_yaw_joint"], 10.0, 0.1, 0.86, velocity=11.0),
     },
 )
+

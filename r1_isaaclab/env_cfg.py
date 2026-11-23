@@ -109,6 +109,19 @@ class R1Rewards(RewardsCfg):
         weight=-0.1,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_hip_roll_joint"])},
     )
+    # Self-collision penalty: with self-collision enabled, contacts between the legs are counted
+    # here. Without this term the cheapest way to place the feet is to let the shins overlap.
+    undesired_contacts = RewTerm(
+        func=mdp.undesired_contacts,
+        weight=-1.0,
+        params={
+            "sensor_cfg": SceneEntityCfg(
+                "contact_forces",
+                body_names=[".*_hip_.*", ".*_knee_link", ".*_ankle_pitch_link"],
+            ),
+            "threshold": 1.0,
+        },
+    )
     # Anti-strafe term: pays nothing while moving straight, penalises sideways speed during a turn.
     lateral_vel_when_turning = RewTerm(
         func=r1_mdp.lateral_velocity_when_turning,
@@ -188,7 +201,7 @@ class R1RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.commands.base_velocity.ranges.ang_vel_z = (-1.5, 1.5)
         # rewards
         self.rewards.lin_vel_z_l2.weight = 0.0
-        self.rewards.undesired_contacts = None
+        self.rewards.undesired_contacts.weight = -1.0
         self.rewards.flat_orientation_l2.weight = -1.0
         self.rewards.action_rate_l2.weight = -0.005
         self.rewards.dof_acc_l2.weight = -1.25e-7
@@ -254,6 +267,7 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         )
         # curriculum
         self.curriculum.terrain_levels = None
+
 
 
 
