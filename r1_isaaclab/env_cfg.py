@@ -26,6 +26,7 @@ from isaaclab.utils.noise import UniformNoiseCfg as Unoise
 from isaaclab_tasks.core.velocity import mdp
 from isaaclab_tasks.core.velocity.velocity_env_cfg import LocomotionVelocityRoughEnvCfg, RewardsCfg
 
+from . import cameras as r1_cameras
 from . import mdp as r1_mdp
 from .asset import R1_CFG
 
@@ -316,6 +317,10 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         )
         # curriculum
         self.curriculum.terrain_levels = None
+        # optional head stereo cameras (R1_CAMERAS=1), used by capture_stereo.py and visual tasks
+        if r1_cameras.cameras_enabled():
+            r1_cameras.add_head_cameras(self)
+
 
 
 
