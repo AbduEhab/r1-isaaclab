@@ -124,3 +124,21 @@ def swing_time_penalty(
     over = (air_time - max_air_time).clamp(min=0.0)
     under = (min_air_time - air_time).clamp(min=0.0)
     return ((over + under) * airborne.float()).sum(dim=1)
+
+def single_support_time_penalty(
+    env: ManagerBasedRLEnv,
+    sensor_cfg: SceneEntityCfg,
+    max_single_support: float = 0.6,
+) -> torch.Tensor:
+    """Penalise standing on one foot for too long.
+
+    With the flight phase gone, the remaining stiffness is that the policy balances on one leg for
+    long stretches instead of putting the other foot down. This charges the stance foot's contact
+    time beyond ``max_single_support`` seconds while exactly one foot is on the ground.
+    """
+    sensor = env.scene.sensors[sensor_cfg.name]
+    contact_time = sensor.data.current_contact_time.torch[:, sensor_cfg.body_ids]
+    in_contact = contact_time > 0.0
+    single = in_contact.sum(dim=1) == 1
+    excess = (contact_time - max_single_support).clamp(min=0.0).sum(dim=1)
+    return excess * single.float()

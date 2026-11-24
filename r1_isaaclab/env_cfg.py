@@ -122,6 +122,11 @@ class R1Rewards(RewardsCfg):
             "threshold": 1.0,
         },
     )
+    single_support_time_penalty = RewTerm(
+        func=r1_mdp.single_support_time_penalty,
+        weight=0.0,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=FEET)},
+    )
     double_support_bonus = RewTerm(
         func=r1_mdp.double_support_bonus,
         weight=0.0,
@@ -274,7 +279,7 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         # observations
         self.observations.policy.height_scan = None
         # commands: forward speed sweep for this run, so one gait covers walking speeds
-        self.commands.base_velocity.ranges.lin_vel_x = (0.2, 1.2)
+        self.commands.base_velocity.ranges.lin_vel_x = (0.2, 0.7)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
         # The base velocity task ships with heading_command=True: the yaw "command" is then
         # 0.5 * heading error, recomputed every step, not a rate the policy must follow. Stock G1
@@ -297,7 +302,8 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         self.rewards.flight_phase_penalty.weight = -2.0
         self.rewards.swing_clearance.weight = 1.0
         # Walk-like support phases and cadence (see mdp.double_support_bonus / swing_time_penalty).
-        self.rewards.double_support_bonus.weight = 0.5
+        self.rewards.double_support_bonus.weight = 1.0
+        self.rewards.single_support_time_penalty.weight = -1.0
         self.rewards.swing_time_penalty.weight = -1.0
         # Hop = bouncing: make vertical motion expensive.
         self.rewards.lin_vel_z_l2.weight = -1.0
@@ -310,6 +316,8 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         )
         # curriculum
         self.curriculum.terrain_levels = None
+
+
 
 
 
