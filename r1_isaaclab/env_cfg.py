@@ -122,6 +122,16 @@ class R1Rewards(RewardsCfg):
             "threshold": 1.0,
         },
     )
+    double_support_bonus = RewTerm(
+        func=r1_mdp.double_support_bonus,
+        weight=0.0,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=FEET)},
+    )
+    swing_time_penalty = RewTerm(
+        func=r1_mdp.swing_time_penalty,
+        weight=0.0,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=FEET)},
+    )
     # Gait shaping. The velocity reward alone is satisfied by a one-leg hop: the flight phase is
     # free, no contact pattern is required, and the swing foot only has to move forward, not up.
     contact_schedule = RewTerm(
@@ -263,8 +273,8 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         self.scene.height_scanner = None
         # observations
         self.observations.policy.height_scan = None
-        # commands
-        self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 1.0)
+        # commands: forward speed sweep for this run, so one gait covers walking speeds
+        self.commands.base_velocity.ranges.lin_vel_x = (0.2, 1.2)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
         # The base velocity task ships with heading_command=True: the yaw "command" is then
         # 0.5 * heading error, recomputed every step, not a rate the policy must follow. Stock G1
@@ -286,6 +296,9 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         self.rewards.contact_schedule.weight = 1.5
         self.rewards.flight_phase_penalty.weight = -2.0
         self.rewards.swing_clearance.weight = 1.0
+        # Walk-like support phases and cadence (see mdp.double_support_bonus / swing_time_penalty).
+        self.rewards.double_support_bonus.weight = 0.5
+        self.rewards.swing_time_penalty.weight = -1.0
         # Hop = bouncing: make vertical motion expensive.
         self.rewards.lin_vel_z_l2.weight = -1.0
         self.rewards.feet_air_time.params["threshold"] = 0.4
@@ -297,6 +310,8 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
         )
         # curriculum
         self.curriculum.terrain_levels = None
+
+
 
 
 

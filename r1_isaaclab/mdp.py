@@ -96,3 +96,31 @@ def swing_clearance(
     heights = asset.data.body_pos_w.torch[:, asset_cfg.body_ids, 2]
     clearance = heights.clamp(min=0.0, max=max_height)
     return (airborne.float() * clearance).sum(dim=1)
+
+def double_support_bonus(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+    """1.0 when both feet are on the ground.
+
+    Single-support-dominated gaits look like fast marching or running. A human walk spends roughly a
+    fifth of the cycle with both feet down, which is also the phase where balance is corrected.
+    """
+    airborne = _feet_airborne(env, sensor_cfg)
+    return (~airborne).all(dim=1).float()
+
+
+def swing_time_penalty(
+    env: ManagerBasedRLEnv,
+    sensor_cfg: SceneEntityCfg,
+    min_air_time: float = 0.15,
+    max_air_time: float = 0.40,
+) -> torch.Tensor:
+    """Penalise swing durations outside a walking band (default 0.15-0.4 s).
+
+    Longer swings mean fewer, bouncier steps; shorter ones mean scuffing. Keeping the swing in the
+    band fixes the cadence without hard-coding a frequency.
+    """
+    sensor = env.scene.sensors[sensor_cfg.name]
+    air_time = sensor.data.current_air_time.torch[:, sensor_cfg.body_ids]
+    airborne = air_time > 0.0
+    over = (air_time - max_air_time).clamp(min=0.0)
+    under = (min_air_time - air_time).clamp(min=0.0)
+    return ((over + under) * airborne.float()).sum(dim=1)
