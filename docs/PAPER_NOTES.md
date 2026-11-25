@@ -347,3 +347,16 @@ novelty detection must use geometry (rendered depth), needs localisation in the 
 VSLAM/COLMAP pipeline), and requires explicit handling of floaters and holes. Remaining work: ellipsoid
 depth rasterisation, real sim stereo input, and fusing the novelty layer into the online map.
 
+## 16. Splat of the whole warehouse with NVIDIA gsplat (2026-11-25)
+
+No COLMAP: the walkthrough capture records RGB-D frames and exact poses from Isaac Sim (212 frames,
+150 m A*-planned coverage route), and NVIDIA's `gsplat` (nvcr pytorch 25.10 + gsplat 1.5.3) trains
+200k Gaussians from depth back-projection in 15k iterations (final L1+SSIM loss 0.0362, ~10 min on
+the A5000). Output: standard 3DGS PLY plus a 212-pose walkthrough video.
+
+Three implementation traps worth recording: gsplat wants *activated* values (sigmoid opacity, exp
+scale) - raw logits silently render nothing; the captured camera pose is in the simulator's optical
+convention (forward +X) and needs an axis permutation for OpenCV/gsplat; and depth back-projection is
+a better initialisation than sparse SfM when exact poses are available. Rendering at recorded poses is
+clean, slerp-interpolated poses show fog from the semi-transparent depth-init Gaussians.
+
