@@ -77,3 +77,37 @@ docker run --rm --gpus all --ipc=host ^
   python /code/render_splat_walkthrough.py --model /data/final/gsplat_model.npz ^
   --meta /data/walk_meta.json --out /data/final
 ```
+
+## Flyover capture (clean data, no robot, no markers)
+
+The first walkthrough had two data problems: the velocity-command **arrows** that Isaac Lab draws above
+the robot appeared in some frames, and the robot itself (plus its shadow) polluted others.
+`scripts/capture_warehouse_flycam.py` fixes both:
+
+- the velocity-command debug visualisation is disabled (`base_velocity.debug_vis = False`),
+- the robot is made **invisible** in the stage (it only carries the camera mount),
+- the camera rides at **2.45 m** on a serpentine coverage path through the free floor
+  (216 frames, 640x480, RGB + metric depth + exact poses).
+
+Training on that data with the same gsplat recipe gives a cleaner reconstruction:
+
+| | walkthrough capture | flyover capture |
+|---|---|---|
+| frames | 212 | 216 |
+| Gaussians | 200k | 200k |
+| final loss (L1+SSIM) | 0.0362 | **0.0230** |
+| video | `runs/warehouse_splat/final` | `runs/splat_flycam/final` |
+
+Deliverables of the flyover version:
+
+```
+runs/splat_flycam/final/warehouse_splat.ply                  200k Gaussians
+runs/splat_flycam/final/warehouse_splat_walkthrough.mp4      216 poses along the fly path
+runs/splat_flycam/final/view_*.png                           stills
+```
+
+![flyover splat](media/splat/flycam_splat_view030.png)
+
+This is now the preferred capture mode for building a warehouse splat: free camera, hidden robot,
+no debug markers.
+
