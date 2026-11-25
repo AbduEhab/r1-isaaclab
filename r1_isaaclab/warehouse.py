@@ -53,7 +53,7 @@ class Occupancy:
         self.raw = np.zeros((self.nx, self.ny), dtype=bool)
         self.inflate = max(1, int(round(inflate_m / cell)))
 
-    def build_from_stage(self, root_prim: str = PRIM):
+    def build_from_stage(self, root_prim: str = PRIM, exclude: tuple[str, ...] = ("/Robot",)):
         from pxr import Usd, UsdGeom, UsdPhysics
 
         from isaaclab.sim import SimulationContext
@@ -63,7 +63,10 @@ class Occupancy:
         zlo, zhi = self.z_band
         count = 0
         for prim in stage.Traverse():
-            if not str(prim.GetPath()).startswith(root_prim):
+            path = str(prim.GetPath())
+            if not path.startswith(root_prim):
+                continue
+            if any(token in path for token in exclude):
                 continue
             if not prim.HasAPI(UsdPhysics.CollisionAPI):
                 continue

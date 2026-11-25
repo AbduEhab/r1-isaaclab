@@ -19,6 +19,7 @@ provides one.
 | Deployment contract (83 observations, no base linear velocity) | **not started** — needs history observations or an estimator, then `deploy.yaml` export |
 | Navigation foundation | **done**: room with walls/obstacles, 91.7 % success in 12 episodes, [numbers](docs/NAVIGATION.md) |
 | Shop-floor test bed | **done**: Isaac's forklift warehouse (24x39 m, 793 colliders) + conveyors, occupancy grid + A*, robot walks it, [details](docs/WAREHOUSE.md) |
+| Obstacle avoidance | **done**: spawned box between robot and goal, 87.5 % success (8 trials), 0 collisions, [details](docs/NAVIGATION.md) |
 | Sim-to-real | not started |
 
 The complete experimental record (every run, config, metric and finding) is in

@@ -317,3 +317,13 @@ and robot work; the pure-pursuit follower (turning lag of the walking policy plu
 narrow aisles) is the remaining limitation. The fix is a heading-locked follower or a learned
 goal-conditioned policy, for which the room is now a proper shop-floor test bed.
 
+## 14. Obstacle avoidance test (2026-11-25)
+
+Box obstacles are spawned on the stage as kinematic colliders (so the collider-derived occupancy map
+sees them) between the robot and a goal 6 m ahead; the deployed walker follows a potential-field
+controller. With a single 0.8 m box 2.6 m ahead: 87.5 % success over 8 trials, 20.1 s mean time, zero
+bumps, zero falls. A three-box barrier directly on the line exposes a potential-field local minimum -
+the robot stalls in front of it - and the A*+pure-pursuit alternative for that barrier is unreliable
+because the walking policy turns slowly in narrow gaps. So avoidance works for offset obstacles, and
+the remaining problem is the controller for symmetric barriers (wall following or a learned policy).
+
