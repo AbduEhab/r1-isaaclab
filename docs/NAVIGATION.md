@@ -80,3 +80,37 @@ C:\isaac-sim\python.bat scripts\nav_obstacles.py --trials 100 --viz kit         
 C:\isaac-sim\python.bat scripts\nav_obstacles.py --spawn-at "3.5,0.8,0.6;4.5,-0.8,0.6" --viz none
 ```
 
+## No prior map: where does A* get its map?
+
+A* needs a map. With no prior map the robot must build one from its sensors, or skip global planning:
+
+1. **Online mapping (SLAM without loop closure)** - the robot integrates a lidar or stereo depth into an
+   occupancy grid as it moves; A* runs on the live map, replanned every few steps. Unknown cells are
+   treated as free (optimistic) so the robot keeps moving towards the goal instead of freezing at the
+   frontier.
+2. **Local / reactive planning** - potential fields, vector field histogram or dynamic window approach
+   plan in the currently observed space only; no global map is needed, but they get stuck in local
+   minima (our three-box barrier case).
+3. **Learned navigation** - a policy conditioned on depth images + goal vector acts directly from
+   perception; no explicit map. This is the robust route in clutter, at the cost of training.
+4. **Exploration** - if the goal is far away in unknown space, a frontier-based explorer (or a map
+   from the building plan) is needed; A* alone cannot reason about unobserved space.
+
+### Implemented prototype: lidar -> online occupancy -> avoidance
+
+`r1_isaaclab/online_map.py` (empty grid, cells become free/occupied only when a lidar ray crosses
+them) and `scripts/nav_unknown.py`: obstacles spawn with the environment, but the planner is never
+told where they are; a 360-degree MultiMesh ray-caster at 0.35 m feeds the online map each step and
+the controller avoids the cells the robot has actually seen.
+
+Measured (box positions randomised, 40 s limit): the lidar detects the boxes after 38-245 steps and
+maps 45-60 % of the scene; the controller avoids some but still collides with boxes (2-4 bump events
+per trial) and only 1 of 9 trials reached the goal. So the *mapping pipeline* works; the **local
+controller on a partial, noisy map is the weak point**, and this is the honest state of the no-map
+prototype. The known-map obstacle course above (87.5 %) is the reliable demo.
+
+Next steps for the no-map case, in order of expected value: replace the potential-field follower with
+A* on the online grid using a cost that penalises unknown cells (mildly), replan every 10 steps, and
+use the pure-pursuit/waypoint controller with a heading-locked walk; then, if robust, train a
+goal-conditioned depth policy for clutter.
+
