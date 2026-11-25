@@ -106,9 +106,10 @@ def main() -> int:
             import open3d as o3d
 
             pcd = o3d.io.read_point_cloud(args.points)
-            pts = np.asarray(pcd.points)
+            pts_raw = np.asarray(pcd.points)
+            pts = (s * (R @ pts_raw.T)).T + t  # into the ground-truth frame
             print(f"[eval] point cloud {len(pts)} points, "
-                  f"extent {pts.min(0).round(2)} .. {pts.max(0).round(2)}")
+                  f"aligned extent {pts.min(0).round(2)} .. {pts.max(0).round(2)}")
             gt_stack = np.array([np.array(f["c2w"])[:3, 3] for f in frames])
             gmin, gmax = gt_stack.min(0), gt_stack.max(0)
             inside = np.all((pts[:, :2] > gmin[:2] - 5) & (pts[:, :2] < gmax[:2] + 5), axis=1)
@@ -116,6 +117,7 @@ def main() -> int:
             summary["points_near_trajectory"] = int(inside.sum())
             summary["points_min"] = pts.min(0).round(3).tolist()
             summary["points_max"] = pts.max(0).round(3).tolist()
+            np.save(os.path.join(args.out, "vggt_points_aligned.npy"), pts.astype(np.float32))
 
             try:
                 import matplotlib
@@ -126,6 +128,7 @@ def main() -> int:
                 sub = pts[np.random.choice(len(pts), min(60000, len(pts)), replace=False)]
                 ax.scatter(sub[:, 0], sub[:, 1], c=np.clip((sub[:, 2] - 0.1) / 2.5, 0, 1),
                            s=0.4, cmap="viridis")
+                ax.plot(gt_pos[:, 0], gt_pos[:, 1], "r-", lw=1.5, label="GT trajectory")
                 ax.plot(gt_pos[:, 0], gt_pos[:, 1], "r-", lw=1.5, label="trajectory")
                 ax.set_aspect("equal")
                 ax.set_title("VGGT-SLAM warehouse point cloud (top view, colour = height)")

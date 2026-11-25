@@ -21,6 +21,7 @@ provides one.
 | Shop-floor test bed | **done**: Isaac's forklift warehouse (24x39 m, 793 colliders) + conveyors, occupancy grid + A*, robot walks it, [details](docs/WAREHOUSE.md) |
 | Obstacle avoidance | **done**: spawned box between robot and goal, 87.5 % success (8 trials), 0 collisions, [details](docs/NAVIGATION.md) |
 | Splat prior map + novelty | **prototype**: R1 splat ? occupancy ? A*, depth-residual novelty 84.8 % recall / 100 % precision, [details](docs/SPLAT_MAP.md) |
+| VGGT-SLAM 2.0 map | **done**: warehouse capture ? container run ? Sim(3)-aligned ATE 0.23 m (40 frames) / 0.92 m (70 frames), [details](docs/VGGT_SLAM.md) |
 | Sim-to-real | not started |
 
 The complete experimental record (every run, config, metric and finding) is in

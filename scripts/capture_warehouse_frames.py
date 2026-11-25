@@ -89,10 +89,10 @@ def main() -> int:
 
         # a curved path (arc of ~270 degrees, radius 1.6 m) gives rotation and parallax for SfM
         waypoints = []
-        centre = spawn_xy + np.array([1.6, 0.0])
-        for k in range(60):
-            theta = -np.pi * 1.5 * (k / 59.0)
-            xy = centre + 1.6 * np.array([np.cos(theta), np.sin(theta)])
+        centre = spawn_xy + np.array([2.6, 0.0])
+        for k in range(90):
+            theta = -np.pi * 1.5 * (k / 89.0)
+            xy = centre + 2.6 * np.array([np.cos(theta), np.sin(theta)])
             heading = theta + np.pi / 2.0  # tangent
             hop = occ.nearest_free(xy)
             if hop is None:
