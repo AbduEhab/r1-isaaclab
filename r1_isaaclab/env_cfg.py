@@ -357,3 +357,27 @@ class R1FlatDeployEnvCfg(R1FlatEnvCfg):
             "robot", joint_names=ACT_JOINTS, preserve_order=True)
         self.observations.policy.joint_vel.params["asset_cfg"] = SceneEntityCfg(
             "robot", joint_names=ACT_JOINTS, preserve_order=True)
+
+
+@configclass
+class R1FlatDistillEnvCfg(R1FlatDeployEnvCfg):
+    """Deploy contract plus a teacher-action reward term.
+
+    The deploy policy is distilled from a proven walker (86-observation base task): a reward for
+    matching that teacher's action at every step gives a dense signal that the velocity and gait
+    rewards alone could not provide from cold start, and prevents the standing-still collapse.
+    """
+
+    def __post_init__(self):
+        super().__post_init__()
+        import os
+
+        walker = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "models", "r1_flat_walk3_7300it", "model_7300.pt",
+        )
+        self.rewards.teacher_action = RewTerm(
+            func=r1_mdp.teacher_action_penalty,
+            weight=float(os.environ.get("R1_TEACHER_WEIGHT", "2.0")),
+            params={"checkpoint": walker, "scale": 50.0},
+        )

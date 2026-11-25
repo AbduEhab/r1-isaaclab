@@ -1,4 +1,4 @@
-﻿"""Observation terms Isaac Lab's velocity task does not provide, in Unitree's R1 shape.
+"""Observation terms Isaac Lab's velocity task does not provide, in Unitree's R1 shape.
 
 `gait_phase` is Unitree's R1 observation (their `deploy.yaml`: `gait_phase: {period: 0.6}`). Isaac
 Lab's stock velocity tasks do not have it; without a clock a symmetric biped can satisfy the
@@ -142,3 +142,96 @@ def single_support_time_penalty(
     single = in_contact.sum(dim=1) == 1
     excess = (contact_time - max_single_support).clamp(min=0.0).sum(dim=1)
     return excess * single.float()
+
+# --------------------------------------------------------------------------------------------
+# Teacher regularisation: keep the deploy policy near a proven walking teacher.
+# --------------------------------------------------------------------------------------------
+_TEACHERS: dict[str, object] = {}
+
+
+def _load_teacher(checkpoint: str, device):
+    """Frozen actor (86 -> 24) from an RSL-RL checkpoint, cached per path."""
+    if checkpoint in _TEACHERS:
+        return _TEACHERS[checkpoint]
+    import torch as _torch
+
+    ckpt = _torch.load(checkpoint, map_location="cpu", weights_only=False)
+    sd = ckpt.get("actor_state_dict") or ckpt.get("model_state_dict")
+    model = _torch.nn.Sequential(
+        _torch.nn.Linear(sd["mlp.0.weight"].shape[1], 256), _torch.nn.ELU(),
+        _torch.nn.Linear(256, 128), _torch.nn.ELU(),
+        _torch.nn.Linear(128, 128), _torch.nn.ELU(),
+        _torch.nn.Linear(128, sd["mlp.6.weight"].shape[0]),
+    )
+    model.load_state_dict({
+        "0.weight": sd["mlp.0.weight"], "0.bias": sd["mlp.0.bias"],
+        "2.weight": sd["mlp.2.weight"], "2.bias": sd["mlp.2.bias"],
+        "4.weight": sd["mlp.4.weight"], "4.bias": sd["mlp.4.bias"],
+        "6.weight": sd["mlp.6.weight"], "6.bias": sd["mlp.6.bias"],
+    })
+    model.eval().to(device)
+    for param in model.parameters():
+        param.requires_grad_(False)
+    _TEACHERS[checkpoint] = model
+    return model
+
+
+def _gravity_body(quat: torch.Tensor) -> torch.Tensor:
+    """World gravity (0, 0, -1) in the body frame; quat is (x, y, z, w)."""
+    x, y, z, w = quat[..., 0], quat[..., 1], quat[..., 2], quat[..., 3]
+    g = torch.tensor([0.0, 0.0, -1.0], device=quat.device, dtype=quat.dtype)
+    r = torch.stack([
+        torch.stack([1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)], dim=-1),
+        torch.stack([2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)], dim=-1),
+        torch.stack([2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)], dim=-1),
+    ], dim=-2)
+    return torch.einsum("nij,j->ni", r.transpose(-1, -2), g)
+
+
+def _teacher_obs(env: ManagerBasedRLEnv, checkpoint: str) -> torch.Tensor:
+    """The teacher's 86-dim observation, in the layout the teacher was trained with."""
+    robot = env.scene["robot"]
+    action_term = env.action_manager.get_term("joint_pos")
+    term_names = list(getattr(action_term, "joint_names", None) or action_term._joint_names)
+    art_names = [n for n in robot.joint_names if n in set(term_names)]
+    art_index = {n: i for i, n in enumerate(robot.joint_names)}
+    art_idx = torch.tensor([art_index[n] for n in art_names], device=env.device, dtype=torch.long)
+
+    command = env.command_manager.get_term("base_velocity").command
+    default_pos = robot.data.default_joint_pos.torch
+    prev_action = getattr(env, "_teacher_prev_action", None)
+    if prev_action is None:
+        prev_action = torch.zeros((env.num_envs, len(term_names)), device=env.device)
+    phase = gait_phase(env, period=0.6)
+    return torch.cat([
+        robot.data.root_lin_vel_b.torch,
+        robot.data.root_ang_vel_b.torch,
+        _gravity_body(robot.data.root_quat_w.torch),
+        command,
+        robot.data.joint_pos.torch[:, art_idx] - default_pos[:, art_idx],
+        robot.data.joint_vel.torch[:, art_idx],
+        prev_action,
+        phase,
+    ], dim=-1)
+
+
+def teacher_action_penalty(
+    env: ManagerBasedRLEnv,
+    checkpoint: str,
+    scale: float = 50.0,
+) -> torch.Tensor:
+    """Squared distance between the current action and the teacher's action on the same state.
+
+    Positive when close to the teacher; used with a positive weight as a reward. The teacher is a
+    checkpoint of the base task (it observes base linear velocity), evaluated on the current state;
+    the policy under training lives on the deploy contract (history only).
+    """
+    teacher = _load_teacher(checkpoint, env.device)
+    with torch.no_grad():
+        teacher_action = teacher(_teacher_obs(env, checkpoint))
+    action = env.action_manager.action
+    error = ((action - teacher_action) ** 2).mean(dim=-1)
+    # remember the action for the teacher's next observation (its layout expects the previous action)
+    env._teacher_prev_action = action.detach().clone()
+    return 1.0 / (1.0 + scale * error)
+
