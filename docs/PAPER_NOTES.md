@@ -221,3 +221,45 @@ scales, default pose, observation sources, ONNX shape) and `scripts/validate_dep
 observation builder must reproduce the environment's observation exactly, then a closed-loop rollout).
 On a synthetic deploy-contract checkpoint both pass: 13/13 rules, observation parity 1e-6.
 
+## 11. From a trained walker to a deployable one (2026-11-25, continued)
+
+The deploy contract was validated (section 10), but the policy trained on it did not learn: from
+scratch the PPO run plateaued at reward 39.5 with **90 % both-feet-airborne** and 0.1 m/s regardless
+of command. Four routes were tried and measured:
+
+1. **Behaviour cloning of our own walker** (86 observations) onto the 415-input student: 193 536
+   teacher-labelled pairs, validation action RMSE **0.065 rad**, but closed-loop it drifts to 65 %
+   flight and 0.075 m/s. Compounding error, not fit quality, is the problem.
+2. **PPO from the clone**: collapsed to standing (feet_air_time 0.0003, reward -55).
+3. **PPO from scratch with a teacher-action reward** (the teacher running inside the reward term on
+   its 86-observation state): the bounded reward `1/(1+50*err)` saturated (0.03 at 0.87 rad error,
+   no gradient), so it became a linear penalty. At weight 5 from the clone the error grew; at weight
+   20 from scratch the policy learned to **terminate its own episodes** to stop accumulating the
+   penalty (mean episode length 3.4 steps, base_contact 1.0, despite the -200 termination penalty),
+   i.e. reward hacking of a regulariser.
+4. **DAgger** (student rollouts labelled by the teacher): the student falls into states the teacher
+   never visits, so labels there are out of distribution; retraining on them made it worse (98 %
+   flight).
+
+Two useful negative results: the proven walker with **base linear velocity replaced by zeros**
+(`Isaac-Velocity-Flat-R1-Deploy86`) hops (84 % flight), so zero-filling is not a substitute for
+estimation; and the deploy runner/exporter are sound (they pass the gates) - the difficulty is purely
+learning a history-based policy.
+
+### A deployable policy now exists
+
+The public R1 reference policy does not need this: it already observes exactly the deploy contract
+(83 numbers, single frame, no base linear velocity). `scripts/package_reference_policy.py` packages
+it as `deploy/runs/unitree_reference` (ONNX + deploy.yaml with its joint order, per-joint action
+scales from the R1 table, motor slots, gains, default pose, limits). It passes the team's
+`check_policy.py` **13/13**, and `scripts/play_deploy.py` - which builds the observation with the
+same builder the robot runner uses - walks it at **0.439 m/s with 0.0 % both-feet-airborne** at a
+0.5 m/s command.
+
+### Next
+
+Distil the reference teacher onto our own network, now that teacher and student share the same
+83-dimension observation (single frame): BC as before, then DAgger rounds, then a short PPO
+fine-tune; then rerun the gates on our own export. The reference deploy directory is the working
+fallback until then.
+
