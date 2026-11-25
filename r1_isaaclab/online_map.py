@@ -55,6 +55,27 @@ class OnlineOccupancy:
                 if self.in_grid(c):
                     self.state[c] = OCCUPIED
 
+    def update_hits(self, origin_xy, hits_xyz: np.ndarray, ground_z: float = 0.2) -> int:
+        """Integrate 3D hits: free along every ray, occupied at hits above the floor."""
+        before = int((self.state == OCCUPIED).sum())
+        for hit in hits_xyz:
+            if hit[2] <= ground_z:
+                self._mark_free_ray(origin_xy, hit[:2])
+                cell = self.to_cell(hit[:2])
+                if self.in_grid(cell) and self.state[cell] != OCCUPIED:
+                    self.state[cell] = FREE
+            else:
+                self._ray(origin_xy, hit[:2])
+        self.updates += 1
+        return int((self.state == OCCUPIED).sum()) - before
+
+    def _mark_free_ray(self, origin_xy, hit_xy):
+        steps = int(np.ceil(np.linalg.norm(hit_xy - origin_xy) / (self.cell * 0.5))) + 1
+        for t in np.linspace(0.0, 1.0, steps):
+            cell = self.to_cell(origin_xy + t * (hit_xy - origin_xy))
+            if self.in_grid(cell) and self.state[cell] != OCCUPIED:
+                self.state[cell] = FREE
+
     def update(self, origin_xy, hits_xy: np.ndarray) -> int:
         """Integrate one scan; returns the number of new occupied cells."""
         before = int((self.state == OCCUPIED).sum())

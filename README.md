@@ -20,6 +20,7 @@ provides one.
 | Navigation foundation | **done**: room with walls/obstacles, 91.7 % success in 12 episodes, [numbers](docs/NAVIGATION.md) |
 | Shop-floor test bed | **done**: Isaac's forklift warehouse (24x39 m, 793 colliders) + conveyors, occupancy grid + A*, robot walks it, [details](docs/WAREHOUSE.md) |
 | Obstacle avoidance | **done**: spawned box between robot and goal, 87.5 % success (8 trials), 0 collisions, [details](docs/NAVIGATION.md) |
+| Splat prior map + novelty | **prototype**: R1 splat ? occupancy ? A*, depth-residual novelty 84.8 % recall / 100 % precision, [details](docs/SPLAT_MAP.md) |
 | Sim-to-real | not started |
 
 The complete experimental record (every run, config, metric and finding) is in

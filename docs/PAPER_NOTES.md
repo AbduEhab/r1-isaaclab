@@ -327,3 +327,23 @@ the robot stalls in front of it - and the A*+pure-pursuit alternative for that b
 because the walking policy turns slowly in narrow gaps. So avoidance works for offset obstacles, and
 the remaining problem is the controller for symmetric barriers (wall following or a learned policy).
 
+## 15. Splat prior map and new-obstacle detection (2026-11-25)
+
+The R1 reconstruction already exists in this workspace (COLMAP workspace, `scene.npz` with 1 487
+poses and 43 321 sparse points, `model.npz` with 43 321 trained Gaussians). Using it as a prior map
+and comparing its rendered depth with live stereo depth is the practical version of "check the splat
+for new obstacles":
+
+- prior map: opacity filter (9 801 solid Gaussians), >= 2 Gaussians per cell to reject floaters,
+  height split floor/obstacle, 0.2 m inflation -> A* route 5.22 m;
+- novelty: render the splat depth at a pose, fill the sparse holes with a dilation, compare with a
+  live depth image (stereo SGBM is the sensor the robot has), flag pixels where live is nearer by
+  > 0.25 m, back-project them into a novelty layer and replan;
+- measured with a simulated 0.9 m box at 2 m: 84.8 % recall, 100 % precision, clean silhouette. Missed
+  pixels are splat depth holes.
+
+Conclusions for the write-up: a splat is a good prior map (geometry + appearance, cheap to render) but
+novelty detection must use geometry (rendered depth), needs localisation in the splat frame (the
+VSLAM/COLMAP pipeline), and requires explicit handling of floaters and holes. Remaining work: ellipsoid
+depth rasterisation, real sim stereo input, and fusing the novelty layer into the online map.
+
