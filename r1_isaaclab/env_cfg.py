@@ -1,4 +1,4 @@
-﻿"""Environment configuration for the R1 velocity-tracking task.
+"""Environment configuration for the R1 velocity-tracking task.
 
 Mirrors Isaac Lab's stock G1 velocity task (isaaclab_tasks/core/velocity/config/g1), so the reward
 terms, events and curriculum are the ones NVIDIA trains with, but with:
@@ -224,8 +224,12 @@ class R1RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         # term is removed again once the gait is learned.
         self.observations.policy.base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         self.observations.policy.gait_phase = ObsTerm(func=r1_mdp.gait_phase, params={"period": 0.6})
-        self.observations.policy.joint_pos.params["asset_cfg"] = SceneEntityCfg("robot", joint_names=ACT_JOINTS)
-        self.observations.policy.joint_vel.params["asset_cfg"] = SceneEntityCfg("robot", joint_names=ACT_JOINTS)
+        # preserve_order makes the observation's joint order equal the action order (both are the
+        # ACT_JOINTS pattern order); deploy.yaml then has one joint order for everything.
+        self.observations.policy.joint_pos.params["asset_cfg"] = SceneEntityCfg(
+            "robot", joint_names=ACT_JOINTS, preserve_order=True)
+        self.observations.policy.joint_vel.params["asset_cfg"] = SceneEntityCfg(
+            "robot", joint_names=ACT_JOINTS, preserve_order=True)
         # commands
         self.commands.base_velocity.vel_yaw_success_threshold = 0.8
         self.commands.base_velocity.marker_pos_offset = (0.0, 0.0, 0.6)
@@ -334,3 +338,21 @@ class R1FlatEnvCfg(R1RoughEnvCfg):
 
 
 
+
+
+@configclass
+class R1FlatDeployEnvCfg(R1FlatEnvCfg):
+    """The walking task on the contract the real robot can provide.
+
+    The robot has no base linear velocity measurement, so that term is removed and the policy gets
+    five frames of observation history instead: velocity is inferable from the motion history
+    (command + joint velocities + gravity direction), which is how the reference policy deploys.
+    Everything else (actions, rewards, commands, cameras) is inherited from the flat task.
+    """
+
+    def __post_init__(self):
+        super().__post_init__()
+
+        self.observations.policy.base_lin_vel = None
+        self.observations.policy.history_length = 5
+        self.observations.policy.flatten_history_dim = True
