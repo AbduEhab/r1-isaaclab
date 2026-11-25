@@ -17,6 +17,7 @@ provides one.
 | Walking policy | **walks at 0.3–0.5 m/s**, hop largely removed (flight 1.5–4.4 %), [gait numbers](docs/RESULTS.md) |
 | Turning | yaw-rate command tracked at ~1.05 rad/s in place (pivoting gait, not stepped turns) |
 | Deployment contract (83 observations, no base linear velocity) | **not started** — needs history observations or an estimator, then `deploy.yaml` export |
+| Navigation foundation | **done**: room with walls/obstacles, 91.7 % success in 12 episodes, [numbers](docs/NAVIGATION.md) |
 | Sim-to-real | not started |
 
 The complete experimental record (every run, config, metric and finding) is in

@@ -76,6 +76,7 @@ def main() -> int:
         order = torch.tensor([index[n] for n in contract.joint_names], device=device, dtype=torch.long)
         feet_ids, _ = robot.find_bodies([".*_ankle_roll_link"], preserve_order=True)
         feet = torch.tensor(feet_ids, device=device)
+        yaw_rates, headings, feet_xy = [], [], []
         command_term = unwrapped.command_manager.get_term("base_velocity")
 
         builders = [obs_builder.ObsBuilder(contract) for _ in range(launcher_args.num_envs)]
@@ -98,6 +99,11 @@ def main() -> int:
             env.step(action_t)
             speeds.append(float(robot.data.root_lin_vel_b.torch[0, 0].item()))
             feet_z.append(robot.data.body_pos_w.torch[0, feet, 2].cpu().numpy())
+            feet_xy.append(robot.data.body_pos_w.torch[0, feet, :2].cpu().numpy())
+            yaw_rates.append(float(robot.data.root_ang_vel_b.torch[0, 2].item()))
+            q = robot.data.root_quat_w.torch[0].cpu().numpy()  # (x, y, z, w)
+            headings.append(float(np.arctan2(2 * (q[3] * q[2] + q[0] * q[1]),
+                                             1 - 2 * (q[1] ** 2 + q[2] ** 2))))
             cmd_t = command_term.command.clone()
             cmd_t[:, 0], cmd_t[:, 1], cmd_t[:, 2] = launcher_args.vx, 0.0, launcher_args.wz
             if hasattr(command_term, "vel_command_b"):
@@ -115,6 +121,11 @@ def main() -> int:
             print(f"forward speed        {np.mean(speeds):+.3f} m/s (command {launcher_args.vx})")
             print(f"base height          {np.mean(z.mean(axis=1)):.3f} m (feet mean)")
             print(f"both feet airborne   {(airborne == 2).mean() * 100:.1f} %")
+            print(f"yaw rate             {np.mean(yaw_rates):+.3f} rad/s (command {launcher_args.wz})")
+            print(f"heading travelled    {np.unwrap(np.array(headings))[-1] - np.unwrap(np.array(headings))[0]:+.2f} rad")
+            xy = np.array(feet_xy)
+            step_len = np.linalg.norm(np.diff(xy, axis=0), axis=-1).mean() if xy.shape[0] > 1 else 0.0
+            print(f"foot travel/step     {step_len:.3f} m")
         env.close()
     return 0
 

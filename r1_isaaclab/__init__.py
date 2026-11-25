@@ -66,3 +66,14 @@ gym.register(
         "default_agent": "rsl_rl",
     },
 )
+
+gym.register(
+    id="Isaac-Velocity-Flat-R1-Nav",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.nav_cfg:R1NavEnvCfg",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:R1FlatPPORunnerCfg",
+        "default_agent": "rsl_rl",
+    },
+)

@@ -282,3 +282,20 @@ DAgger failure was the 86-vs-83 layout mismatch putting teacher labels out of di
 - The policy is flat-ground only; robustness (pushes, payloads, rough terrain) is future work.
 - Navigation (goal-conditioned rooms) is the next phase.
 
+## 12. Navigation in a room (2026-11-25)
+
+The deployed distilled walker drives a room 5 x 5 m with 0.8 m walls and three 0.3 m boxes
+(`r1_isaaclab/nav_cfg.py`). A potential-field planner (goal attraction, obstacle and wall repulsion)
+turns the goal into a velocity command that the deploy directory's policy executes through the robot
+runner's observation builder.
+
+| setup | success | time to goal | collisions |
+|---|---|---|---|
+| blind go-to-goal | 50 % (6/12) | 4.39 s (successes) | 6 |
+| potential field | **91.7 % (11/12)** | **6.75 s** | 0 (1 timeout) |
+
+With `--capture` the head stereo pair records RGB and metric depth during the run; a front-camera
+frame shows the wall corner from the robot's head. The planner still uses ground-truth geometry, so
+the next step is depth-based avoidance and a goal-conditioned learned policy. Committed tooling:
+`scripts/nav_demo.py`, `r1_isaaclab/nav_cfg.py`, task `Isaac-Velocity-Flat-R1-Nav`.
+
