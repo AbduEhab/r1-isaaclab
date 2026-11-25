@@ -65,6 +65,7 @@ def main() -> int:
     ap.add_argument("--iterations", type=int, default=4)
     ap.add_argument("--steps_per_iter", type=int, default=48)
     ap.add_argument("--out", default=os.path.join(REPO, "data", "teacher_rollouts.npz"))
+    ap.add_argument("--student", default=None, help="roll this checkpoint's actions instead of the teacher's (DAgger)")
     ap.add_argument("--device", default="cuda:0")
     args = ap.parse_args()
 
@@ -81,6 +82,7 @@ def main() -> int:
     from r1_isaaclab.env_cfg import ACT_JOINTS
 
     teacher = load_actor(args.teacher).to(args.device)
+    student = load_actor(args.student).to(args.device) if args.student else None
 
     env_cfg = parse_env_cfg(BASE_TASK, device=args.device, num_envs=args.num_envs)
     env_cfg.seed = 11
@@ -161,11 +163,12 @@ def main() -> int:
                 print(f"[collect] teacher obs sanity: max |manual - env| = "
                       f"{(teacher_obs - env_obs).abs().max().item():.5f}", flush=True)
             with torch.no_grad():
-                actions = teacher(teacher_obs)
+                teacher_action = teacher(teacher_obs)
+                actions = student(obs415) if student is not None else teacher_action
 
             if step >= HISTORY and step % 2 == 0:
                 obs_list.append(obs415.cpu())
-                act_list.append(actions.cpu())
+                act_list.append(teacher_action.cpu())
 
             env.step(actions)
 

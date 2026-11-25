@@ -381,3 +381,17 @@ class R1FlatDistillEnvCfg(R1FlatDeployEnvCfg):
             weight=float(os.environ.get("R1_TEACHER_WEIGHT", "5.0")),
             params={"checkpoint": walker},
         )
+
+
+@configclass
+class R1FlatDeploy86EnvCfg(R1FlatEnvCfg):
+    """The proven walker with base linear velocity replaced by zeros (the R1 cannot measure it).
+
+    Keeps the exact 86-dimension layout the walker was trained with, so its checkpoint can be
+    exported and run without any state estimator; the question this task answers is whether the
+    gait survives the missing measurement.
+    """
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.observations.policy.base_lin_vel = ObsTerm(func=r1_mdp.zero_linear_velocity)

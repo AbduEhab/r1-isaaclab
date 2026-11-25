@@ -14,6 +14,16 @@ from isaaclab.envs import ManagerBasedRLEnv
 from isaaclab.managers import SceneEntityCfg
 
 
+def zero_linear_velocity(env: ManagerBasedRLEnv) -> torch.Tensor:
+    """Stand-in for a measurement the R1 does not have: three zeros.
+
+    The walking teacher was trained with base linear velocity; fed zeros it degrades gracefully if
+    the gait is largely feed-forward, which is what this variant tests before deciding whether the
+    robot needs a velocity estimator.
+    """
+    return torch.zeros((env.num_envs, 3), device=env.device)
+
+
 def gait_phase(env: ManagerBasedRLEnv, period: float = 0.6) -> torch.Tensor:
     """Two-dim sinusoidal gait clock in [cos, sin], one per environment, period in seconds."""
     t = env.episode_length_buf.to(torch.float32) * env.step_dt

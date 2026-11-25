@@ -29,9 +29,9 @@ def main() -> int:
     import numpy as np
     import torch
 
-    data = np.load(args.data)
-    obs = torch.from_numpy(data["obs"]).float()
-    act = torch.from_numpy(data["act"]).float()
+    parts = [np.load(p) for p in args.data.split(",")]
+    obs = torch.from_numpy(np.concatenate([p["obs"] for p in parts])).float()
+    act = torch.from_numpy(np.concatenate([p["act"] for p in parts])).float()
     n = obs.shape[0]
     perm = torch.randperm(n)
     n_val = max(1, n // 20)
