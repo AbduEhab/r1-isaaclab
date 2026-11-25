@@ -233,5 +233,7 @@ def teacher_action_penalty(
     error = ((action - teacher_action) ** 2).mean(dim=-1)
     # remember the action for the teacher's next observation (its layout expects the previous action)
     env._teacher_prev_action = action.detach().clone()
-    return 1.0 / (1.0 + scale * error)
+    # negative squared error: a linear penalty keeps a useful gradient even when the error is large,
+    # unlike a bounded 1/(1+x), which saturates and lets the policy drift to standing still
+    return -error
 

@@ -378,6 +378,6 @@ class R1FlatDistillEnvCfg(R1FlatDeployEnvCfg):
         )
         self.rewards.teacher_action = RewTerm(
             func=r1_mdp.teacher_action_penalty,
-            weight=float(os.environ.get("R1_TEACHER_WEIGHT", "2.0")),
-            params={"checkpoint": walker, "scale": 50.0},
+            weight=float(os.environ.get("R1_TEACHER_WEIGHT", "5.0")),
+            params={"checkpoint": walker},
         )
