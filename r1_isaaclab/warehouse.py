@@ -13,10 +13,16 @@ import heapq
 
 import numpy as np
 
-WAREHOUSE = (
-    "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.2/"
-    "Isaac/Environments/Simple_Warehouse/warehouse_with_forklifts.usd"
-)
+ROOT = "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.2/Isaac/Environments/"
+ENVS = {
+    "warehouse": ROOT + "Simple_Warehouse/warehouse.usd",
+    "warehouse_shelves": ROOT + "Simple_Warehouse/warehouse_multiple_shelves.usd",
+    "warehouse_forklifts": ROOT + "Simple_Warehouse/warehouse_with_forklifts.usd",
+    "warehouse_full": ROOT + "Simple_Warehouse/full_warehouse.usd",
+    "digital_twin_small": ROOT + "Digital_Twin_Warehouse/small_warehouse_digital_twin.usd",
+    "office": ROOT + "Office/office.usd",
+}
+WAREHOUSE = ENVS["warehouse_forklifts"]
 PRIM = "/World/Environment"
 
 

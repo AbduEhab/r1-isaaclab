@@ -63,6 +63,7 @@ def main() -> int:
         env = gym.make("Isaac-Velocity-Flat-R1-Nav", cfg=env_cfg)
         unwrapped = env.unwrapped
         robot = unwrapped.scene["robot"]
+        command_term = unwrapped.command_manager.get_term("base_velocity")
         device = unwrapped.device
         index = {name: i for i, name in enumerate(robot.joint_names)}
         order = torch.tensor([index[name] for name in contract.joint_names], device=device, dtype=torch.long)
@@ -117,6 +118,11 @@ def main() -> int:
                 obs = builder.build(step * dt, qi, dqi, q, gyro, cmd)
                 action = sess.run(None, {"obs": obs.reshape(1, -1)})[0][0]
                 builder.record_action(action)
+                cmd_t = command_term.command.clone()
+                cmd_t[:, 0], cmd_t[:, 1], cmd_t[:, 2] = vx, 0.0, wz
+                if hasattr(command_term, "vel_command_b"):
+                    command_term.vel_command_b[:] = cmd_t
+                command_term.command[:] = cmd_t
                 env.step(torch.tensor(action, device=device).reshape(1, -1))
                 steps += 1
 
