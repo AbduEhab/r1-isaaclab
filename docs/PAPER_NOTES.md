@@ -193,3 +193,31 @@ iteration times (7–8 s at 8192 envs).
 - Newton requires `nconmax ≥ ~48` per environment at 2048 envs, or ~34 k contacts are silently
   dropped (we saw 37 k warnings and fixed it).
 - Corporate TLS interception requires a CA build secret for container builds (`--secret id=corp_ca`).
+
+## 10. The deployment contract (2026-11-25)
+
+The trained flat policies observe base linear velocity (86 dims), which the R1 cannot measure. The
+deployable task `Isaac-Velocity-Flat-R1-Deploy` drops that term and feeds **5 frames of history**
+instead: 83 observations per frame, 415 network inputs. Velocity is then inferred from the motion
+history rather than measured.
+
+Three contract errors were found by validating the export against the simulator and the team's
+`check_policy.py`; all are the kind that silently produce a walking-in-place or falling robot:
+
+1. **Observation joint order differed from the action joint order.** Isaac Lab resolves observation
+   joint patterns in articulation order (left leg, right leg, ...) while the action term keeps the
+   pattern order (left hip, right hip, left roll, ...). The deploy builder must use one order for
+   everything, so the observation terms now set `preserve_order=True`.
+2. **Isaac Lab 3.0 quaternions are (x, y, z, w).** A builder assuming (w, x, y, z) produced gravity
+   vectors with an inverted z axis. Unitree's IMU reports (w, x, y, z); the runner converts.
+3. **deploy.yaml observation dimensions are per frame, multiplied by `history_length`.** Writing the
+   already-multiplied dims made the checker read 2075 numbers instead of 415.
+
+Also: the action term keeps its per-joint scale tensor in a different order than its joint order
+(dict insertion order), so scales must be read by joint name from the config, not from the tensor.
+
+Validation gates that now exist: the team's `check_policy.py` (13 rules: slots, lengths, gains,
+scales, default pose, observation sources, ONNX shape) and `scripts/validate_deploy.py` (the deploy
+observation builder must reproduce the environment's observation exactly, then a closed-loop rollout).
+On a synthetic deploy-contract checkpoint both pass: 13/13 rules, observation parity 1e-6.
+
