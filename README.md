@@ -18,6 +18,7 @@ provides one.
 | Turning | yaw-rate command tracked at ~1.05 rad/s in place (pivoting gait, not stepped turns) |
 | Deployment contract (83 observations, no base linear velocity) | **not started** — needs history observations or an estimator, then `deploy.yaml` export |
 | Navigation foundation | **done**: room with walls/obstacles, 91.7 % success in 12 episodes, [numbers](docs/NAVIGATION.md) |
+| Shop-floor test bed | **done**: Isaac's forklift warehouse (24x39 m, 793 colliders) + conveyors, occupancy grid + A*, robot walks it, [details](docs/WAREHOUSE.md) |
 | Sim-to-real | not started |
 
 The complete experimental record (every run, config, metric and finding) is in

@@ -299,3 +299,21 @@ frame shows the wall corner from the robot's head. The planner still uses ground
 the next step is depth-based avoidance and a goal-conditioned learned policy. Committed tooling:
 `scripts/nav_demo.py`, `r1_isaaclab/nav_cfg.py`, task `Isaac-Velocity-Flat-R1-Nav`.
 
+## 13. A warehouse test bed (2026-11-25)
+
+Rather than modelling a building, we used Isaac Sim's shipped environments
+(`Assets/Isaac/6.2/Isaac/Environments/`): Simple_Warehouse (plain / multiple shelves / forklifts /
+full), Digital_Twin_Warehouse, Hospital, Office, Modular_Warehouse. The chosen test bed is
+`warehouse_with_forklifts.usd`: 24 x 39 m, 3 697 prims, 793 colliders, forklifts, racks, crates and
+pallet jacks, plus three conveyor belts spawned from `Props/Conveyors` in an open aisle.
+
+`r1_isaaclab/warehouse.py` rasterises the colliders into a 2D occupancy grid (robot body band
+0.15-1.6 m, floor ignored, 0.55 m inflation), with a BFS reachability mask and A* planning.
+`scripts/nav_warehouse.py` follows the path with pure pursuit driving the deployed walker.
+
+Measured: a 5.4 m route succeeds in 17.6-19.0 s with no bumps; 9-10 m routes make the robot circle
+near the goal and time out; 24-29 m routes reach within 4 m then drift. The environment, map, planner
+and robot work; the pure-pursuit follower (turning lag of the walking policy plus replanning churn in
+narrow aisles) is the remaining limitation. The fix is a heading-locked follower or a learned
+goal-conditioned policy, for which the room is now a proper shop-floor test bed.
+
