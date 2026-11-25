@@ -256,10 +256,29 @@ scales from the R1 table, motor slots, gains, default pose, limits). It passes t
 same builder the robot runner uses - walks it at **0.439 m/s with 0.0 % both-feet-airborne** at a
 0.5 m/s command.
 
-### Next
+### The distill that worked
 
-Distil the reference teacher onto our own network, now that teacher and student share the same
-83-dimension observation (single frame): BC as before, then DAgger rounds, then a short PPO
-fine-tune; then rerun the gates on our own export. The reference deploy directory is the working
-fallback until then.
+Because the reference policy and the student share the *same* single-frame 83-observation layout,
+DAgger is exact here: the teacher can label any state the student reaches, with the same observation.
+`scripts/distill_reference.py`:
+
+1. teacher rollouts in our physics with randomised commands: 196 608 labelled steps;
+2. behaviour clone (83-256-128-128-24): validation action RMSE 0.066 rad, but closed loop 33 % flight
+   at 0.3 and 73 % at 0.5 - the same compounding-error failure as before;
+3. **DAgger round 1**: roll the student, label its states with the teacher, retrain on the aggregate
+   (val RMSE 0.143 rad - worse fit, but the states are the student's, which is the point):
+   **0.0 % flight** at 0.3 and 0.5 m/s;
+4. **DAgger round 2**: 0.0 % flight, and speed tracking at 0.3 / 0.5 / 0.7 m/s of
+   0.302 / 0.462 / 0.629 m/s.
+
+The result (`deploy/runs/r1_distilled`) passes the team's `check_policy.py` 13/13 and is runnable
+through the robot runner. Two lessons: (a) a worse-valued RMSE can be a better policy - the
+distribution matters, not the fit; (b) with matching observation contracts, DAgger works; the earlier
+DAgger failure was the 86-vs-83 layout mismatch putting teacher labels out of distribution.
+
+### Remaining
+
+- Optional: a short PPO fine-tune of the distilled policy with the gait rewards for turning quality.
+- The policy is flat-ground only; robustness (pushes, payloads, rough terrain) is future work.
+- Navigation (goal-conditioned rooms) is the next phase.
 

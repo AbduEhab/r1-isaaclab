@@ -108,3 +108,25 @@ Safety rules that are not in software:
 | `deploy/r1_policy_runner.py` | robot loop (DDS, ramps, watchdog, clamps) |
 | `scripts/export_policy.py` | checkpoint → ONNX + deploy.yaml (+ contract metadata) |
 | `scripts/validate_deploy.py` | in-sim gate: obs parity + closed-loop rollout |
+
+## 7. The deployable policy we ship
+
+`deploy/runs/r1_distilled/` is a policy **distilled from the public reference walker** and trained
+on the single-frame deploy contract (83 observations, no base linear velocity, no history):
+
+| command | speed reached | both feet airborne |
+|---|---|---|
+| 0.3 m/s | 0.302 m/s | **0.0 %** |
+| 0.5 m/s | 0.462 m/s | **0.0 %** |
+| 0.7 m/s | 0.629 m/s | **0.0 %** |
+
+It passes `check_policy.py` **13/13**, and `scripts/play_deploy.py` (the same observation builder the
+robot runner uses) walks it in the simulator. The recipe is `scripts/distill_reference.py`:
+behaviour cloning of 196 608 teacher-labelled steps, then two DAgger rounds where the student is
+rolled and the teacher labels the student's own states (196 608 pairs each). Dataset:
+`data/ref_teacher.npz`, `data/ref_dagger1.npz`, `data/ref_dagger2.npz` (gitignored, regenerate with
+the script). `deploy/runs/unitree_reference/` stays as the teacher's own deploy directory and a
+fallback.
+
+Run either on the robot with `python -m deploy.r1_policy_runner --policy deploy/runs/r1_distilled`.
+
