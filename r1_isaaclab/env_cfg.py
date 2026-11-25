@@ -224,12 +224,8 @@ class R1RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         # term is removed again once the gait is learned.
         self.observations.policy.base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         self.observations.policy.gait_phase = ObsTerm(func=r1_mdp.gait_phase, params={"period": 0.6})
-        # preserve_order makes the observation's joint order equal the action order (both are the
-        # ACT_JOINTS pattern order); deploy.yaml then has one joint order for everything.
-        self.observations.policy.joint_pos.params["asset_cfg"] = SceneEntityCfg(
-            "robot", joint_names=ACT_JOINTS, preserve_order=True)
-        self.observations.policy.joint_vel.params["asset_cfg"] = SceneEntityCfg(
-            "robot", joint_names=ACT_JOINTS, preserve_order=True)
+        self.observations.policy.joint_pos.params["asset_cfg"] = SceneEntityCfg("robot", joint_names=ACT_JOINTS)
+        self.observations.policy.joint_vel.params["asset_cfg"] = SceneEntityCfg("robot", joint_names=ACT_JOINTS)
         # commands
         self.commands.base_velocity.vel_yaw_success_threshold = 0.8
         self.commands.base_velocity.marker_pos_offset = (0.0, 0.0, 0.6)
@@ -356,3 +352,8 @@ class R1FlatDeployEnvCfg(R1FlatEnvCfg):
         self.observations.policy.base_lin_vel = None
         self.observations.policy.history_length = 5
         self.observations.policy.flatten_history_dim = True
+        # one joint order for observation and action: deploy.yaml then needs a single order
+        self.observations.policy.joint_pos.params["asset_cfg"] = SceneEntityCfg(
+            "robot", joint_names=ACT_JOINTS, preserve_order=True)
+        self.observations.policy.joint_vel.params["asset_cfg"] = SceneEntityCfg(
+            "robot", joint_names=ACT_JOINTS, preserve_order=True)

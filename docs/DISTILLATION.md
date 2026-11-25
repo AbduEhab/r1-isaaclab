@@ -101,3 +101,25 @@ reached 1.5 % flight and 9.3 % double support at 0.3 m/s. The remaining levers a
 single-support penalty, a longer training budget, and history observations for deployability.
 Distillation is faster to a *good-looking* gait because it copies a proven one instead of searching
 for it, but it adds a data pipeline that the reward route does not need.
+
+## Implemented: teacher-clone into the deploy contract
+
+The first deploy-contract policy trained from scratch plateaued at reward ~39.5 with a degenerate
+gait (90 % both-feet-airborne, 0.1 m/s regardless of command). That is the moment the distillation
+fallback was designed for, and it is now implemented for our own walker (not the Unitree ONNX, which
+stays the external reference):
+
+1. `scripts/collect_teacher.py` rolls `models/r1_flat_walk3_7300it` (the 86-observation walker that
+   walks at 1.5 % flight) in the base task with randomised commands, builds the **deploy observation**
+   (415 = 83 x 5 history) from the same robot state, and records the teacher action as the label.
+   Sanity check: the manually built teacher observation matches the environment's own vector to 0.0.
+   193 536 samples in ~3 minutes at 1024 environments.
+2. `scripts/bc_train.py` behaviour-clones the deploy network (256-128-128) on those pairs: 12 epochs,
+   validation action RMSE **0.065 rad**.
+3. Closed-loop, the clone drifts (65 % both-feet-airborne at a 0.3 m/s command, 0.075 m/s reached) -
+   classic compounding error, since a fraction of a radian per step is enough to fall.
+4. `scripts/finetune.py --task Isaac-Velocity-Flat-R1-Deploy` continues with PPO from the clone:
+   the RL rewards fix the drift while the clone's weights keep the gait near the teacher's.
+
+The run logs to `logs/rsl_rl/r1_flat/deploy_bc_2026-11-25`; the plateau watcher stops it.
+

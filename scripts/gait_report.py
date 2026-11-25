@@ -1,4 +1,4 @@
-﻿"""Gait report: walk vs hop for a policy (RSL-RL checkpoint or the Unitree ONNX).
+"""Gait report: walk vs hop for a policy (RSL-RL checkpoint or the Unitree ONNX).
 
 Measures, per foot (ankle_roll_link), from 10 s of simulation with a fixed velocity command:
 
@@ -38,8 +38,32 @@ from r1_isaaclab.agents.rsl_rl_ppo_cfg import R1FlatPPORunnerCfg  # noqa: E402
 from r1_isaaclab.mdp import gait_phase  # noqa: E402
 
 TASK = "Isaac-Velocity-Flat-R1"
+DEFAULT_TASK = TASK
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+
+def _load_runner(runner, checkpoint):
+    """Load a checkpoint; behaviour-cloned ones carry no optimizer state and no infos."""
+    import os
+
+    import torch
+
+    loaded = torch.load(checkpoint, map_location="cpu", weights_only=False)
+    has_optimizer = "optimizer_state_dict" in loaded
+    if has_optimizer and "infos" in loaded:
+        runner.load(checkpoint)
+        return
+    loaded.setdefault("optimizer_state_dict", {})
+    loaded.setdefault("infos", {})
+    tmp = checkpoint + ".loader.pt"
+    torch.save(loaded, tmp)
+    try:
+        runner.load(tmp, load_cfg={
+            "actor": True, "critic": True, "optimizer": has_optimizer,
+            "iteration": False, "rnd": False,
+        })
+    finally:
+        os.remove(tmp)
 
 def elu(x):
     return np.where(x > 0, x, np.expm1(np.minimum(x, 0)))
@@ -64,9 +88,9 @@ class OnnxPolicy:
 
 
 def build_env(args):
-    env_cfg = parse_env_cfg(TASK, device=args.device, num_envs=args.num_envs)
+    env_cfg = parse_env_cfg(args.task, device=args.device, num_envs=args.num_envs)
     env_cfg.seed = 11
-    return gym.make(TASK, cfg=env_cfg)
+    return gym.make(args.task, cfg=env_cfg)
 
 
 def main():
@@ -77,6 +101,7 @@ def main():
     ap.add_argument("--wz", type=float, default=0.0)
     ap.add_argument("--steps", type=int, default=500)
     ap.add_argument("--num_envs", type=int, default=8)
+    ap.add_argument("--task", default=DEFAULT_TASK)
     ap.add_argument("--device", default="cuda:0")
     args = ap.parse_args()
     if not args.checkpoint and not args.onnx:
@@ -111,7 +136,7 @@ def main():
         agent_cfg = handle_deprecated_rsl_rl_cfg(agent_cfg, _v("rsl-rl-lib"))
         wrapped = RslRlVecEnvWrapper(env, clip_actions=agent_cfg.clip_actions)
         runner = create_rsl_rl_runner(wrapped, agent_cfg)
-        runner.load(args.checkpoint)
+        _load_runner(runner, args.checkpoint)
         policy = runner.get_inference_policy(device=unwrapped.device)
         out = wrapped.reset()
         obs = out[0] if isinstance(out, tuple) else out

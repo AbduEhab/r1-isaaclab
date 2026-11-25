@@ -86,10 +86,7 @@ def main() -> int:
         # The policy's joint order is the action term's order, not the pattern-resolution order:
         # deploy.yaml must list joints, gains, scales and slots in exactly the order the network
         # was trained with.
-        joint_names = list(getattr(action_term, "joint_names", []))
-        if not joint_names:
-            _, joint_names = robot.find_joints(ACT_JOINT_PATTERNS, preserve_order=True)
-            joint_names = list(joint_names)
+        joint_names = list(getattr(action_term, "joint_names", None) or action_term._joint_names)
 
         art_index = {n: i for i, n in enumerate(robot.joint_names)}
         joint_idx = [art_index[n] for n in joint_names]

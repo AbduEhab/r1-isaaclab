@@ -33,6 +33,29 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TASK = "Isaac-Velocity-Flat-R1"
 
 
+def _load_runner(runner, checkpoint):
+    """Load a checkpoint; behaviour-cloned ones carry no optimizer state and no infos."""
+    import os
+
+    import torch
+
+    loaded = torch.load(checkpoint, map_location="cpu", weights_only=False)
+    has_optimizer = "optimizer_state_dict" in loaded
+    if has_optimizer and "infos" in loaded:
+        runner.load(checkpoint)
+        return
+    loaded.setdefault("optimizer_state_dict", {})
+    loaded.setdefault("infos", {})
+    tmp = checkpoint + ".loader.pt"
+    torch.save(loaded, tmp)
+    try:
+        runner.load(tmp, load_cfg={
+            "actor": True, "critic": True, "optimizer": has_optimizer,
+            "iteration": False, "rnd": False,
+        })
+    finally:
+        os.remove(tmp)
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--checkpoint", required=True)
@@ -40,22 +63,23 @@ def main() -> int:
     ap.add_argument("--num_envs", type=int, default=8192)
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--run_name", default=None)
+    ap.add_argument("--task", default=TASK)
     args = ap.parse_args()
 
     run_name = args.run_name or time.strftime("finetune_%Y-%m-%d_%H-%M-%S")
     log_dir = os.path.join(REPO, "logs", "rsl_rl", "r1_flat", run_name)
     os.makedirs(os.path.join(log_dir, "params"), exist_ok=True)
 
-    env_cfg = parse_env_cfg(TASK, device=args.device, num_envs=args.num_envs)
+    env_cfg = parse_env_cfg(args.task, device=args.device, num_envs=args.num_envs)
     env_cfg.seed = 23
-    env = gym.make(TASK, cfg=env_cfg)
+    env = gym.make(args.task, cfg=env_cfg)
 
     agent_cfg = R1FlatPPORunnerCfg()
     agent_cfg.max_iterations = args.iterations
     agent_cfg = handle_deprecated_rsl_rl_cfg(agent_cfg, _pkg_version("rsl-rl-lib"))
     wrapped = RslRlVecEnvWrapper(env, clip_actions=agent_cfg.clip_actions)
     runner = create_rsl_rl_runner(wrapped, agent_cfg, log_dir=log_dir)
-    runner.load(args.checkpoint)
+    _load_runner(runner, args.checkpoint)
     print(f"[finetune] loaded {args.checkpoint}", flush=True)
     print(f"[finetune] log dir {log_dir}", flush=True)
 
