@@ -5,6 +5,9 @@
 grasping, in-hand dexterity and pick-and-place, but *not* handless interaction: 2026 work demonstrates
 non-prehensile interaction on handless humanoids (pushing, pulling, two-arm carriage, locomotion-coupled
 transport) — OIL (AAAI-SS 2026) on **Digit**, and VOFA (2026) for visual object-goal pushing.
+**Verification:** [THESIS_GAP_VERIFICATION_2026-11.md](THESIS_GAP_VERIFICATION_2026-11.md) checks each of
+the 15 gaps against the closest 2025-2026 work: most are narrowed or closed, only G1 and G6 survive as
+clear claims. Read it before committing to a direction.
 Companion documents: [THESIS_GAPS_2026-11.md](THESIS_GAPS_2026-11.md) (deep dive on GS/VSLAM/RL/distill),
 [RESEARCH_LANDSCAPE_BROAD_2026-11.md](RESEARCH_LANDSCAPE_BROAD_2026-11.md) (broad landscape).
 
