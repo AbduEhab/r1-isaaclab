@@ -1,6 +1,7 @@
 # G2 design: calibrated novelty layer for a splat-mapped warehouse
 
 **Status:** design document for thesis Claim B (see [THESIS_GAP_VERIFICATION_2026-11.md](THESIS_GAP_VERIFICATION_2026-11.md)).
+**Literature review:** [LITREVIEW_G2.md](LITREVIEW_G2.md) ? the thesis-grade review for this topic.
 **Date:** 2026-11-26. **Constraint:** handless R1, no force sensing assumed; sim-first evaluation.
 
 ---
