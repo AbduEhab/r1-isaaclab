@@ -83,9 +83,14 @@ risks/fallback → contribution → ease**.
 
 - **Question:** given a prior Gaussian-splat map, can a robot detect changed geometry (new/moved/removed
   objects) with calibrated uncertainty, and plan so it never hits the unmodelled ones?
-- **Closest work / missing:** GS-LTS (long-term change), RGS-SLAM (dynamic objects during SLAM),
-  uncertainty-driven GS-SLAM, Active-NBV risk maps. Missing: a *prior-map* novelty layer for navigation with
-  uncertainty and a benchmark.
+**Detailed design:** [THESIS_G2_DESIGN.md](THESIS_G2_DESIGN.md).
+
+- **Closest work / missing:** GS-LTS (object-level change + editing), **Argos/Argos-SLAM (Oct 2026,
+  learned online change detection on VGGT-SLAM, +42 % change IoU)** ? detection is now published;
+  SemSafe-3DGS and Active-NBV AVaR cover risk-aware planning on *static* splat maps. Missing: a
+  *calibrated* novelty layer (conformal false-safe guarantee) on a prior map, with negative change, feeding
+  an explicit risk-aware planner for a handless humanoid ? and evaluation of safety outcomes rather than
+  change IoU.
 - **Build:** our existing render-depth vs live-depth residual (84.8 % recall, 100 % precision on injected
   object) extended with (a) opacity/scale/depth-variance uncertainty, (b) temporal filtering + removal
   (negative change), (c) moving actors, (d) novelty-aware cost inflation in our A*/potential-field planner,

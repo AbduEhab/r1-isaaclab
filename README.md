@@ -23,7 +23,7 @@ provides one.
 | Splat prior map + novelty | **prototype**: R1 splat ? occupancy ? A*, depth-residual novelty 84.8 % recall / 100 % precision, [details](docs/SPLAT_MAP.md) |
 | VGGT-SLAM 2.0 map | **done**: warehouse capture ? container run ? Sim(3)-aligned ATE 0.23 m (40 frames) / 0.92 m (70 frames), [details](docs/VGGT_SLAM.md) |
 | Warehouse splat | **done**: 212-frame RGB-D walkthrough ? NVIDIA gsplat, 200k Gaussians, walkthrough video + PLY, [details](docs/SPLAT_WAREHOUSE.md) |
-| Thesis gap analysis | **done**: SOTA survey (GS, VSLAM, humanoid RL, distillation) + 12 ranked gaps, [deep dive](docs/THESIS_GAPS_2026-11.md); broader landscape incl. VLA/world models/loco-manipulation in [companion](docs/RESEARCH_LANDSCAPE_BROAD_2026-11.md); handless-R1 deep dive in [deep dive](docs/THESIS_DEEP_DIVE_HANDLESS_2026-11.md); literature verification of each gap in [verification](docs/THESIS_GAP_VERIFICATION_2026-11.md) |
+| Thesis gap analysis | **done**: SOTA survey (GS, VSLAM, humanoid RL, distillation) + 12 ranked gaps, [deep dive](docs/THESIS_GAPS_2026-11.md); broader landscape incl. VLA/world models/loco-manipulation in [companion](docs/RESEARCH_LANDSCAPE_BROAD_2026-11.md); handless-R1 deep dive in [deep dive](docs/THESIS_DEEP_DIVE_HANDLESS_2026-11.md); literature verification of each gap in [verification](docs/THESIS_GAP_VERIFICATION_2026-11.md); full design of the recommended method thesis in [G2 design](docs/THESIS_G2_DESIGN.md) |
 | Sim-to-real | not started |
 
 The complete experimental record (every run, config, metric and finding) is in
