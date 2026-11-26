@@ -133,71 +133,54 @@ Beyond A1–A12 in the companion document:
   from scripted/teleop demonstrations. We have the walker and the Isaac asset; arms are currently unused.
 - **B4. Safety wrapper for a deployed learned walker**: barrier-certificate or runtime-monitor layer on top
   of our 83-obs policy, with evidence in sim (falls prevented) and on hardware (if available).
-- **B5. Multi-robot warehouse coordination with learned walkers**: fleet traffic, deadlocks, AI-assigned
-  goals; sim-only, uses our warehouse and policy; benchmark contribution.
-- **B6. Humanoid benchmark for warehouse loco-manipulation** with GT poses/depth (dataset + metrics):
-  easiest publishable artefact; complements A12.
-- **B7. Event/tactile sensing for box handling** (hardware dependent; R1 hands limited).
 - **B8. Edge deployment study**: distilled policy + VGGT-scale perception on Jetson Thor/Orin — which
   model sizes/rates are realistic for humanoid navigation? Hardware dependent.
-- **B9. Social/dynamic navigation in human-shared warehouses**: humans walking; splat map + dynamic
-  occupancy; benchmark with scripted human agents.
-- **B10. VLA evaluation reproducibility**: reproduce a public humanoid VLA result in sim, fix a known gap
-  (e.g., evaluation protocol). Low novelty, high utility, very easy.
 
 ---
 
-## 4. Revised ranking (combined A + B, easiest first)
+## 4. Revised ranking (method-only, easiest first)
 
-Ease 10 = start today with existing workspace; publication potential for a master thesis in brackets.
+Ease 10 = start today with existing workspace; publication potential for a master's thesis in brackets.
 
 | # | Gap | Ease | Effort | Hardware | Type |
 |---|---|---|---|---|---|
-| 1 | **A1** metric scale anchoring for legged VGGT-SLAM (+A12 benchmark) | 9 | 8–10 wk | sim | method+benchmark (RA-L/IROS) |
-| 2 | **A2** splat novelty/change detection + novelty-aware planning | 8 | 10–12 wk | optional | method (ICRA) |
-| 3 | **B6/A12** warehouse humanoid benchmark (GT poses/depth/colliders, navigation+walking tasks) | 9 | 5–8 wk | sim | dataset/benchmark (workshop→full) |
-| 4 | **A3** auto-collider generation from splats | 7 | 8–10 wk | sim | tool+study |
-| 5 | **A5** visual fidelity vs control (splat/NuRec rendering ablation) | 7 | 8–10 wk | sim | empirical study |
-| 6 | **B5** multi-robot warehouse coordination with learned walkers | 7 | 8–10 wk | sim | benchmark+system |
-| 7 | **A10** distillation benchmark for humanoid locomotion | 7 | 8–10 wk | sim | empirical |
-| 8 | **B3** R1 loco-manipulation (walk + arm skills) | 6 | 10–12 wk | sim (+robot) | system |
-| 9 | **B4** safety wrapper for deployed walker | 6 | 10–12 wk | sim (+robot) | method+eval |
-| 10 | **B9** dynamic/social warehouse navigation | 6 | 10–12 wk | sim | system+benchmark |
-| 11 | **A4** photoreal real2sim locomotion sim2real | 5 | 16–20 wk | robot needed | system+study (high impact) |
-| 12 | **A6** planning under splat-map uncertainty | 5 | 12–14 wk | sim | method |
-| 13 | **B1** humanoid VLA post-training for one skill | 4 | 14–16 wk | GPU-heavy | adaptation study |
-| 14 | **B2** world model as data generator | 3 | 16+ wk | GPU-heavy | empirical |
-| 15 | **A7** VGGT distillation into onboard control | 4 | 14–16 wk | sim | method |
-| 16 | **A11/A8** multi-session map maintenance / 4D dynamic maps | 3 | 18+ wk | sim | research-grade |
-| 17 | **B8** edge deployment study (Jetson Thor) | 4 | 8 wk | hardware | measurement |
+| 1 | **A1** contact-anchored metric scale for legged VGGT-SLAM | 9 | 8?10 wk | sim | method (RA-L/IROS) |
+| 2 | **A2** splat novelty/change with uncertainty + planner | 8 | 10?12 wk | optional | method (ICRA) |
+| 3 | **A3** auto-collider generation from splats | 7 | 8?10 wk | sim | method/tool |
+| 4 | **A5** visual-vs-collider fidelity ablation | 6 | 14?20 wk | robot ideal | empirical study |
+| 5 | **B4** safety wrapper for the deployed walker | 6 | 10?12 wk | optional | method+eval |
+| 6 | **B3** R1 loco-manipulation (walk + arm contacts) | 6 | 10?12 wk | sim (+robot) | system |
+| 7 | **A4** photoreal real2sim locomotion sim2real | 5 | 16?20 wk | robot needed | system+study (high impact) |
+| 8 | **A6** planning under online-SLAM map uncertainty | 5 | 12?14 wk | sim | method (offline-splat version closed) |
+| 9 | **A7** VGGT distillation into onboard control | 4 | 14?16 wk | sim | method |
+| 10 | **A11** multi-session map maintenance | 4 | 18+ wk | sim | research-grade |
+| 11 | **B1** humanoid VLA post-training for one skill (navigation only, no hands) | 4 | 14?16 wk | GPU-heavy | adaptation study |
+| 12 | **A8** dynamic 4D maps (predictive-navigation use only; mapping closed) | 3 | 18+ wk | sim | research-grade |
 
-Changes vs the companion document: the benchmark/benchmark-adjacent options moved up (they are nearly
-free given our sim GT), and the fleet/multi-robot direction (B5) entered as an easy sim-only option that
-the earlier, perception-focused search missed.
-
----
+Removed as benchmark-only (direction): warehouse benchmark, fleet traffic benchmark, distillation
+benchmark, social-navigation benchmark, VLA-evaluation benchmark. Removed as closed: planning under
+offline-splat uncertainty, dynamic 4D mapping, VLA navigation evaluation.
 
 ## 5. What this means for our workspace
 
-- **Cheapest high-value theses** remain perception/mapping fusion (A1, A2) plus the benchmark artefacts
-  (B6/A12). We can start all three today.
+- **Cheapest high-value theses** remain perception/mapping fusion (A1, A2); both are methods we can start
+  today with existing infrastructure.
 - **Best infrastructure fit with the industry direction**: splat-based simulation (NuRec GA, Isaac Lab 3.0,
   Newton) — the local stack is exactly the reference stack of the field, so a real2sim thesis (A3/A4/A5)
   will be reproducible by others and aligned with NVIDIA's public roadmap.
 - **Highest risk**: VLA and world-model theses (compute-limited on a 16 GB laptop GPU); hardware-limited
   ones (B4/B8/B7) depend on R1 access and on the robot's hand configuration, which we have not verified.
-- **Positioning**: a thesis that produces an open benchmark + one method contribution (e.g., A1+A12 or
-  A2+B6) is the safest path to a strong master's outcome; a thesis that builds the real2sim system (A3+A4)
-  is the highest-impact path if hardware and time allow.
+- **Positioning**: a thesis built on one strong method claim (A1 or A2) with a rigorous evaluation protocol is
+  the safest path; the real2sim system (A3+A4) is the highest-impact path if hardware and time allow.
 
 ---
 
 ## 6. Recommended sequencing for a master's
 
-1. **Month 1–2:** freeze a benchmark (B6/A12) — cheap, reusable, de-risks everything after.
+1. **Month 1-2:** build the evaluation protocol on simulator ground truth (cheap, reusable, de-risks everything after).
 2. **Month 2–5:** one method contribution on top (A1 scale anchoring or A2 novelty layer).
 3. **Month 5–7:** extension toward deployment or sim2real (A4/A5 if hardware, otherwise A6/A10).
-4. **Month 7–8:** writing + open-sourcing the benchmark and code.
+4. **Month 7-8:** writing + open-sourcing the code and evaluation scripts.
 
 This sequencing gives two publishable artefacts even if the ambitious extension fails.
 

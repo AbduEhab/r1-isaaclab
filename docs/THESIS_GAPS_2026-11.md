@@ -147,8 +147,8 @@ Each gap: what is missing in the literature, why *we* can do it, and the contrib
 VGGT-SLAM 2.0 output scale is arbitrary (we measured 3.8 and 4.5 across two captures); the 2026
 semantic-anchoring fix targets monocular loop closure, not robots with proprioception. A legged robot has
 foot-contact odometry, IMU, and a known body geometry. Gap: *scale estimation from leg odometry/contact
-priors fused with VGGT submaps*, plus a benchmark of legged sequences with GT metric poses. Our sim gives
-GT for free. Contribution: method + benchmark; IROS/RA-L/ICRA fit.
+priors fused with VGGT submaps*, evaluated on legged warehouse sequences with simulator ground truth.
+Contribution: method (+ evaluation protocol); IROS/RA-L/ICRA fit.
 
 **A2. "Is the splat still true?" — novelty and change detection in Gaussian maps, for navigation.**
 GS-LTS and RGS-SLAM handle dynamics inside mapping; no system uses a *prior splat map* as the reference and
@@ -169,7 +169,7 @@ accessible). Contribution: system + empirical study of whether visual realism ch
 **A5. How much visual fidelity does a locomotion policy need?**
 No controlled study of render fidelity (procedural → splat → NuRec) against control performance/sim2real
 gap. Small but clean: 3–4 conditions, identical physics, measure transfer. Very easy to run in our stack;
-publishable as an empirical/benchmark paper or as part of A4.
+publishable as an empirical study or as part of A4.
 
 **A6. Navigation on SLAM-generated splat maps with uncertainty.**
 Splat-Nav assumes a good offline map; feed-forward SLAM maps have scale/pose drift and uncertainty. Gap:
@@ -189,48 +189,29 @@ humanoid-scale evaluation is open. Harder data/eval.
 GLMap (CVPR 2026) does zero-shot embodied navigation; no humanoid + real splat map + R1 walking stack
 demonstration. Integration-heavy rather than novel.
 
-**A10. Distillation benchmark for humanoid locomotion (privileged → deployable).**
-Our DAgger experiment showed BC-only drifts and on-policy DAgger works; a systematic comparison (BC, DAgger,
-teacher-regularised PPO, on-policy distillation with token/action-level supervision) across privileged
-signals (base vel, depth, splat) would be a solid empirical paper. Low risk, but less novel.
-
 **A11. Multi-session splat map maintenance.**
 VGGT-SLAM and 3DGS assume one pass; re-localising a new session into a prior splat map and updating it is an
 open robotics problem. Medium-hard; needs map anchoring (overlaps A1/A2).
 
-**A12. Foundation-model SLAM evaluation for warehouses.**
-We already have GT poses/depth in Isaac warehouse, and our VGGT-SLAM numbers are inconsistent across
-captures (0.23 vs 0.92 m ATE). A proper benchmark (trajectories, dynamics, texture) with failure analysis
-is a dataset/benchmark contribution; low novelty but high utility and easy.
-
 ---
 
-## 5. Ranking by ease (and expected value)
+## 5. Ranking by ease (method-only)
 
-Scoring: **Ease** = infrastructure readiness × data readiness × algorithmic risk × compute (10 = can start
-tomorrow, 1 = new research infrastructure). **Novelty/Impact**: publication potential for a master thesis.
-Weeks are for the core result, excluding writing.
+Pure benchmark/dataset topics (A9 language navigation, A10 distillation benchmark, A12 SLAM evaluation
+benchmark) are removed by direction; the closed method gaps are noted in the verification document.
+Benchmarks appear only as evaluation protocols inside a method thesis.
 
 | # | Gap | Ease | Weeks | Hardware | Novelty | Comment |
 |---|---|---|---|---|---|---|
-| 1 | **A1 metric scale anchoring for legged VGGT-SLAM** | 9 | 8–10 | sim only | high | We have VGGT-SLAM running, GT in sim, and legged contacts; the literature explicitly lists scale drift as open. Add a benchmark; strong RA-L/IROS story. |
-| 2 | **A2 splat novelty/change detection** | 8 | 10–12 | sim + optional | high | Prototype exists (84.8 % recall); needs uncertainty + planning + benchmark. Directly useful for robot deployment. |
-| 3 | **A12 foundation-SLAM evaluation for warehouse** | 9 | 4–6 | sim only | medium | Easiest publishable artifact; best done *inside* A1 as the benchmark section. |
-| 4 | **A3 auto-colliders from splats** | 7 | 8–10 | sim only | medium-high | Tool + study; feeds A4. Risk: geometry quality from squishy splats; use 2DGS/depth to help. |
-| 5 | **A5 visual fidelity vs control** | 7 | 8–10 | sim only | medium | Cheap ablation, but needs GPU-rendered RL (rendering cost is the main constraint). |
-| 6 | **A10 distillation benchmark for locomotion** | 7 | 8–10 | sim; hardware optional | medium | We have the full pipeline; contribution is empirical. Good fallback if A1 stalls. |
-| 7 | **A4 splat real2sim for humanoid locomotion** | 5 | 16–20 | real R1 ideally | very high | Highest impact, highest risk: physics/visual coupling, real-robot availability, sim2real eval. |
-| 8 | **A6 planning under splat-map uncertainty** | 5 | 12–14 | sim | high | Needs A1/A2 results first; Splat-Nav lineage is strong. |
-| 9 | **A9 language-conditioned humanoid navigation** | 5 | 12–14 | sim + real | medium | Integration work; GLMap exists, novelty is the humanoid loop. |
-| 10 | **A7 VGGT distillation into onboard control** | 4 | 14–16 | sim | high | Requires designing the teacher-student interface; compute-heavy. |
-| 11 | **A11 multi-session map maintenance** | 3 | 18+ | sim | high | Research-grade; overlaps A1/A2; scope risk. |
-| 12 | **A8 dynamic 4D warehouse maps** | 3 | 18+ | sim | high | 4DGS data + evaluation; heavy. |
-
-**Ranking logic:** the easiest theses are those where the hard system already exists in this workspace and
-the open problem is a *measurement or fusion* question (A1, A2, A12, A3). The hardest are those that require
-new infrastructure or real hardware (A4, A7, A11, A8).
-
----
+| 1 | **A1 metric, contact-anchored scale for legged VGGT-SLAM** | 9 | 8?10 | sim only | high | strongest method claim; literature leaves legged contact anchoring open |
+| 2 | **A2 splat novelty/change detection with uncertainty + planning** | 8 | 10?12 | sim + optional | high | prototype exists (84.8 % recall); change detection alone is scooped, integration is not |
+| 3 | **A3 auto-colliders from splats** | 7 | 8?10 | sim only | medium-high | core idea published for manipulation; locomotion-scale evaluation survives |
+| 4 | **A5 visual-vs-collider fidelity ablation** | 6 | 14?20 | robot ideal | high | GaussGym shows rendering works; the controlled ablation does not exist |
+| 5 | **A4 photoreal splat real2sim for humanoid locomotion** | 5 | 16?20 | robot ideal | very high | highest impact, highest risk |
+| 6 | **A6 planning under online-SLAM map uncertainty** | 5 | 12?14 | sim | medium | offline-splat uncertainty planning is closed (SemSafe-3DGS); only the online-SLAM variant survives |
+| 7 | **A7 VGGT distillation into onboard control** | 4 | 14?16 | sim | high | compute-heavy |
+| 8 | **A11 multi-session splat map maintenance** | 4 | 18+ | sim | high | hard bet |
+| 9 | **A8 dynamic 4D warehouse maps** | 3 | 18+ | sim | medium | mapping version closed (DUAL-GS etc.); predictive-navigation use only |
 
 ## 6. Recommended theses (concrete)
 
@@ -238,7 +219,7 @@ new infrastructure or real hardware (A4, A7, A11, A8).
 
 **Thesis question:** can a VGGT-family SLAM system produce metric, drift-bounded maps for a legged robot by
 fusing leg-odometry scale evidence and contact-consistent loop closure, and can we quantify it on a
-warehouse benchmark?
+warehouse simulator with ground truth?
 
 **Why now:** VGGT-SLAM 2.0 is open (BSD), real-time, and explicitly leaves scale/loop drift to follow-ups;
 the 2026 semantic-anchoring paper shows the community agrees this is the open problem — but nobody uses leg
@@ -257,13 +238,13 @@ kinematics.
 **Experiments/metrics:** ATE RMSE, scale error %, drift per metre, submap alignment error, runtime
 (FPS), map point coverage. Baseline = stock VGGT-SLAM 2.0 and ORB-SLAM3 stereo.
 
-**Deliverables:** open-source patch + benchmark + paper (IROS/RA-L). Reuses 80 % of existing code.
+**Deliverables:** open-source patch + evaluation protocol + paper (IROS/RA-L). Reuses 80 % of existing code.
 
-**Timeline (8 months):** M1 integration + sequences; M2 scale anchor; M3 loop closure; M4 benchmark;
+**Timeline (8 months):** M1 integration + sequences; M2 scale anchor; M3 loop closure; M4 evaluation protocol;
 M5–6 ablations + real/sim comparison; M7 writing; M8 defence prep.
 
 **Risks:** leg odometry noise on the real robot; VGGT scale may not be per-frame consistent (mitigate with
-submap-level fusion). **Fallback:** pure-sim benchmark + uncertainty analysis (A12) is still a thesis.
+submap-level fusion). **Fallback:** sim-only evaluation + uncertainty analysis is still a thesis.
 
 ### Recommendation 2 — "Splat novelty maps: keeping a Gaussian map honest for safe navigation"
 
@@ -273,7 +254,7 @@ safely?
 
 **Why now:** Splat maps are becoming the robot map representation (Splat-Nav, GS-SLAM, NuRec), but every
 system assumes the map is current. GS-LTS shows long-term changes matter; nobody gives a robot a
-change-detection layer with planning integration and a benchmark.
+change-detection layer with planning integration and a hazard evaluation protocol.
 
 **Method:**
 1. Export prior map from our warehouse splat (we have 200k Gaussians, PLY + poses).
@@ -282,15 +263,15 @@ change-detection layer with planning integration and a benchmark.
    removal (negative change), (d) dynamic objects (moving forklift).
 3. Novelty-aware planning: inflate cost/clearance using novelty uncertainty; integrate with our A*/potential-
    field navigation and the deployed R1 walker.
-4. Benchmark: new objects, moved racks, removed pallets, moving forklift, lighting change; report
+4. Evaluation protocol: new objects, moved racks, removed pallets, moving forklift, lighting change; report
    detection precision/recall, latency, false-positive cost, navigation success/collisions.
 
-**Deliverables:** novelty layer + planner integration + benchmark; ICRA/IROS/CoRL workshop or full paper.
+**Deliverables:** novelty layer + planner integration + evaluation protocol; ICRA/IROS/CoRL workshop or full paper.
 **Timeline:** M1 prior map + residual baseline (mostly done); M2 uncertainty/temporal; M3 planning;
-M4 benchmark; M5 real/sim transfer; M6–7 writing.
+M4 evaluation protocol; M5 real/sim transfer; M6-7 writing.
 
 **Risks:** render-vs-live residual sensitivity to localisation error (we saw this: pose error dominates) — so
-localisation from A1 is the dependency. **Fallback:** pure detection benchmark (still publishable).
+localisation from A1 is the dependency. **Fallback:** detection-only evaluation study (still publishable).
 
 ### Recommendation 3 — "Photoreal real2sim from splats for humanoid locomotion" (high impact, riskier)
 
@@ -341,9 +322,8 @@ properly.
   gsplat, a splat of the warehouse, a deployed R1 policy, and a simulated warehouse with GT. That
   combination is exactly A1/A2/A3/A5.
 - **Hardware is the main unknown.** If the R1 is available, A4 jumps to the top for impact; if not, do A1 +
-  A12 (sim-only) and treat A4 as future work.
-- **Publish early:** A1's benchmark section alone (A12) is a workshop paper; A2's detection benchmark is
-  another. Sequence: workshop → full paper.
+  (sim-only) and treat A4 as future work.
+- **Publish early:** A1's evaluation protocol plus first results make a workshop paper; the uncertainty integration in A2 is a second. Sequence: workshop, then full paper.
 - **Instrument everything:** ATE/scale, novelty precision/recall, navigation success, and rendering metrics;
   our repo already has the measurement scripts (`gait_report.py`, `eval_vggt_warehouse.py`,
   `nav_obstacles.py`, `splat_novelty.py`).

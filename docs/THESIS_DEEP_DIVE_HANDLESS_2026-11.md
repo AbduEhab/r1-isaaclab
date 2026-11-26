@@ -8,6 +8,9 @@ transport) — OIL (AAAI-SS 2026) on **Digit**, and VOFA (2026) for visual objec
 **Verification:** [THESIS_GAP_VERIFICATION_2026-11.md](THESIS_GAP_VERIFICATION_2026-11.md) checks each of
 the 15 gaps against the closest 2025-2026 work: most are narrowed or closed, only G1 and G6 survive as
 clear claims. Read it before committing to a direction.
+> **Direction (2026-11-26):** pure benchmark/dataset topics are excluded. Benchmarks below exist only as
+> *evaluation protocols* inside a method thesis, never as the thesis contribution.
+
 Companion documents: [THESIS_GAPS_2026-11.md](THESIS_GAPS_2026-11.md) (deep dive on GS/VSLAM/RL/distill),
 [RESEARCH_LANDSCAPE_BROAD_2026-11.md](RESEARCH_LANDSCAPE_BROAD_2026-11.md) (broad landscape).
 
@@ -21,7 +24,7 @@ Companion documents: [THESIS_GAPS_2026-11.md](THESIS_GAPS_2026-11.md) (deep dive
 | VLA post-training for manipulation skills | **removed** (navigation VLAs remain) |
 | Non-prehensile pushing/pulling/carrying (arms + torso, no fingers) | **kept**, sim-first; hardware risk without force sensing |
 | Locomotion, terrain, navigation, mapping, SLAM, safety, fall recovery, fleet | **kept** |
-| Splat-based sim2real, benchmarks, distillation | **kept** |
+| Splat-based sim2real, distillation | **kept** |
 
 The R1's end effectors are wrist-roll joints, so "interaction" means **body/arm contact**: pushing a cart,
 nudging a box, carrying a load on the forearms, blocking a door. That is exactly the OIL/VOFA regime, which
@@ -56,7 +59,7 @@ on the robot or stays simulation-only.
 Each entry: **question → closest work / what's missing → what we build → experiments → resources →
 risks/fallback → contribution → ease**.
 
-### G1. Metric, loop-closed feed-forward SLAM for a handless legged robot (A1+A12)
+### G1. Metric, loop-closed feed-forward SLAM for a handless legged robot (A1)
 
 - **Question:** can VGGT-SLAM 2.0 be made metric and drift-bounded for a legged robot using leg kinematics,
   IMU and contact evidence instead of LiDAR, and can we benchmark it in simulation with ground truth?
@@ -93,25 +96,6 @@ risks/fallback → contribution → ease**.
 - **Risks:** pose error dominates residual (mitigate: use G1 localisation; report sensitivity explicitly).
   **Fallback:** detection-only benchmark.
 - **Contribution:** method + benchmark; ICRA/IROS fit. **Ease 8/10.** ✅ Recommended.
-
-### G3. Handless-humanoid warehouse benchmark (A12+B6)
-
-- **Question:** can we define a benchmark that isolates what matters for a handless humanoid in a warehouse:
-  mapping (scale/drift), navigation (hazards, narrow aisles), and locomotion (execution deviation) — with
-  ground truth that no real robot can provide?
-- **Closest work / missing:** HumanoidBench (15 whole-body tasks, 12 hand-free locomotion tasks — useful
-  primitive suite), ObjectNav-HM3D, "What the Elevation Map Cannot See" (hazard + execution-deviation
-  benchmark, G1). Missing: warehouse-scale, handless-specific, GT SLAM + navigation + locomotion, with
-  scripted dynamic actors (forklifts, humans).
-- **Build:** task suite on our warehouse: (i) map a route and report scale/ATE, (ii) navigate point-to-point
-  with static/dynamic actors, (iii) cross cluttered aisles with execution-deviation metric, (iv) hazard
-  classes (elevation-subtle objects vs. splat-map novelty), (v) auto-generated leaderboard + scripts. Metrics:
-  nav success, time, collisions, hazard contacts, ATE/scale, command-execution deviation, fall rate.
-- **Experiments:** baselines = our VGGT-SLAM + A*/potential-field + distilled walker; add 2–3 external
-  baselines (e.g., a classical ORB-SLAM3+planner pipeline, a VLN-style baseline).
-- **Resources:** all local, weeks 5–8, no hardware. **Risks:** benchmark scope creep — freeze the task
-  matrix early.
-- **Contribution:** dataset/benchmark + 1 small method chapter (G1). **Ease 9/10.** ✅ Recommended first.
 
 ### G4. Auto-generating physics colliders from a splat (A3)
 
@@ -163,36 +147,6 @@ risks/fallback → contribution → ease**.
   **Risks:** no wrist F/T sensing → force estimates noisy; may remain sim-only.
 - **Contribution:** first R1 handless interaction study; strong novelty if hardware works. **Ease 5.5/10.**
 
-### G7. Multi-robot warehouse traffic with learned walkers (B5)
-
-- **Question:** when several handless humanoids share aisles with forklifts, how should goals be assigned and
-  traffic resolved, and does learned locomotion (imperfect tracking) change the scheduling problem?
-- **Closest work / missing:** MIT/Symbotic RL traffic prioritisation (industrial), RMFS coordination
-  literature. Missing: learned-walker fleets in simulation with realistic execution noise; open benchmark.
-- **Build:** N walkers (our policy) in our warehouse, scripted forklifts, a scheduler (rule-based → RL),
-  metrics: throughput, makespan, deadlocks, collisions.
-- **Experiments:** 4/8/16 robots, load scenarios, deadlock injection; compare FCFS, priority rules, RL
-  scheduler; ablation: perfect vs noisy execution.
-- **Resources:** one GPU can run multiple env instances; weeks 8–10; no hardware. **Risks:** novelty overlap
-  with OR/industrial scheduling — position as *learned-execution-aware* scheduling.
-- **Contribution:** benchmark + RL scheduler with execution-aware model. **Ease 7/10.**
-
-### G8. Distillation benchmark for deployable humanoid locomotion (A10)
-
-- **Question:** which distillation route (BC, DAgger, teacher-regularised PPO, on-policy distillation with
-  privileged signals) gives the best deployable humanoid policy for a fixed compute budget?
-- **Closest work / missing:** our own DAgger result (BC drifts, DAgger fixes), E2DRL, quadruped offline KD,
-  Robo-MOPD (planners, not locomotion). Missing: systematic comparison for humanoid locomotion with
-  privileged signals and a reproducible protocol.
-- **Build:** our walker teacher (86-obs, base velocity) → students with different supervision; teacher
-  signals: base velocity, contact, height scan, splat features; evaluation on gait metrics, velocity error,
-  robustness pushes, and sim2real if available.
-- **Experiments:** 4 methods × 3 privileged signals × 2 teacher qualities; metrics: tracking, gait (flight
-  fraction, double support), robustness, training cost.
-- **Resources:** local, weeks 8–10; GPU-heavy (multiple runs). **Risks:** likely a solid empirical paper, not
-  a breakthrough.
-- **Contribution:** protocol + empirical results. **Ease 7.5/10.**
-
 ### G9. Safety wrapper / fall-safety for the deployed walker (B4+C2)
 
 - **Question:** can a runtime safety layer (fall prediction + recovery policy, and/or barrier-certificate
@@ -208,7 +162,7 @@ risks/fallback → contribution → ease**.
   hardware caution.
 - **Contribution:** safety method + evaluation. **Ease 7/10.**
 
-### G10. Planning under splat-map uncertainty (A6)
+### G10. Planning under splat-map uncertainty (A6) - (closed in verification; not a thesis option)
 
 - **Question:** how should a navigation stack consume the uncertainty of a *SLAM-built* splat map
   (scale/pose error, opacity, depth holes) rather than treating it as ground truth?
@@ -234,7 +188,7 @@ risks/fallback → contribution → ease**.
 - **Resources:** weeks 18+, needs G2/G3. **Risks:** research-grade; scope creep.
 - **Contribution:** method; strong if successful. **Ease 4/10.**
 
-### G12. Dynamic / 4D warehouse reconstruction for navigation (A8)
+### G12. Dynamic / 4D warehouse reconstruction for navigation (A8) - (closed in verification; not a thesis option)
 
 - **Question:** can we reconstruct the warehouse *with* moving forklifts and people and use the dynamic
   layer for navigation (predictive avoidance) rather than deleting it?
@@ -242,17 +196,7 @@ risks/fallback → contribution → ease**.
   navigation semantics (predict where the forklift will be), humanoid scale.
 - **Resources:** weeks 18+; data capture heavy. **Ease 3/10.**
 
-### G13. Dynamic/social navigation benchmark for humanoids (B9)
-
-- **Question:** how do handless humanoids navigate shared warehouse space with humans and forklifts, and how
-  do we measure social/hazard-aware behaviour?
-- **Closest work / missing:** "What the Elevation Map Cannot See" hazard/execution benchmark (G1), social
-  navigation literature. Missing: warehouse + splat map + humanoid + handless + dynamic actors with GT.
-- **Build:** scripted human/ forklift actors (or simple social-force agents), hazard classes, metrics
-  (success, hazard contact rate, personal-space violations, execution deviation).
-- **Resources:** weeks 10–12; overlaps G3 (good merge). **Ease 6/10.**
-
-### G14. VLA evaluation/post-training for navigation only (B1/B10)
+### G14. VLA evaluation/post-training for navigation only (B1/B10) - (closed in verification; not a thesis option)
 
 - **Question:** with hands removed, is VLA useful for *navigation/wayfinding* commands on a humanoid, and how
   do public humanoid VLAs (GR00T N, Psi0) perform in a sim warehouse?
@@ -273,54 +217,57 @@ risks/fallback → contribution → ease**.
 
 ---
 
-## 3. Ranked table (no hands, easiest first)
+## 3. Ranked table (method-only, handless, easiest first)
+
+Pure benchmark topics (warehouse benchmark, fleet traffic benchmark, distillation benchmark,
+social-navigation benchmark) and gaps verified as closed (G10 planning-under-uncertainty, G12 dynamic 4D
+mapping, G14 VLA evaluation) are removed ? see [THESIS_GAP_VERIFICATION_2026-11.md](THESIS_GAP_VERIFICATION_2026-11.md).
 
 | # | Gap | Ease | Weeks | Hardware | Novelty | Verdict |
 |---|---|---|---|---|---|---|
-| 1 | G3 handless warehouse benchmark (A12+B6) | 9 | 5–8 | no | medium | do first |
-| 2 | G1 metric legged VGGT-SLAM + benchmark | 9 | 8–10 | no | high | **top pick** |
-| 3 | G2 splat novelty/change layer + planning | 8 | 10–12 | optional | high | strong |
-| 4 | G8 distillation benchmark for locomotion | 7.5 | 8–10 | optional | medium | safe |
-| 5 | G7 multi-robot warehouse traffic | 7 | 8–10 | no | medium | easy novel-ish |
-| 6 | G9 safety wrapper / fall-safety | 7 | 10–12 | optional | medium-high | strong |
-| 7 | G4 auto-colliders from splat | 7 | 8–10 | no | medium-high | enabler |
-| 8 | G13 dynamic/social navigation benchmark | 6 | 10–12 | no | medium | merge into G3 |
-| 9 | G5 photoreal splat sim fidelity study | 6 | 14–20 | robot ideal | high | impact/risk |
-| 10 | G15 contact-aware metric state estimation | 6 | 10–12 | optional | medium | merge into G1 |
-| 11 | G6 handless non-prehensile loco-manipulation | 5.5 | 10–12 | optional | high | risky |
-| 12 | G10 planning under splat uncertainty | 5 | 12–14 | no | high | needs G1/G3 |
-| 13 | G14 VLA navigation evaluation | 4 | 14+ | no | medium | compute-bound |
-| 14 | G11 multi-session map maintenance | 4 | 18+ | no | high | long |
-| 15 | G12 dynamic 4D reconstruction | 3 | 18+ | no | high | long |
+| 1 | G1 contact-anchored metric feed-forward SLAM for a handless legged humanoid (G15 merged) | 9 | 8?10 | no | high | **top pick** |
+| 2 | G2 prior-map novelty with calibrated uncertainty + hazard-aware planner | 8 | 10?12 | optional | high | recommended |
+| 3 | G4 auto-collider generation from splats (method/tool) | 7 | 8?10 | no | medium-high | enabler for G5 |
+| 4 | G9 runtime safety monitor / fall-safety for the deployed walker | 7 | 10?12 | optional | medium | optional chapter |
+| 5 | G5 visual-vs-collider fidelity ablation for humanoid locomotion (empirical study) | 6 | 14?20 | robot ideal | high | risky |
+| 6 | G15 contact-aware metric state estimation | 6 | 10?12 | optional | medium | merge into G1 |
+| 7 | G6 handless non-prehensile interaction on the R1 | 5.5 | 10?12 | optional | high | hardware-gated |
+| 8 | G11 multi-session splat map maintenance | 4 | 18+ | no | high | long bet |
 
----
+## 4. Top three theses (method-only, handless)
 
-## 4. Top three theses (handless), with the plan
+### T1 ? "Contact-anchored metric feed-forward SLAM for a handless legged humanoid" ?
 
-### T1 — "Mapping the warehouse with a handless humanoid: metric feed-forward SLAM and a benchmark" ✅
+Combines G1 and G15. The claim is a **method**: leg contact + kinematics anchor the arbitrary scale of a
+VGGT-SLAM 2.0 map and close submap drift; the evaluation on simulator ground truth (ATE, scale error,
+drift/m) is a protocol, not a benchmark contribution.
 
-Combine G3 (benchmark) and G1 (metric anchoring), with G15 as an optional chapter.
-**Why it wins:** no hardware, all infrastructure exists, both an artifact (benchmark) and a method (legged
-scale/loop fusion), publishable at workshop level in month 3 and full paper later.
-**Plan:** M1 freeze task matrix + sequences; M2 VGGT-SLAM baseline numbers; M3 leg/IMU scale anchor +
-pose-graph fusion; M4 loop-closure revisit tests; M5 benchmark + baselines; M6–7 ablations/writing.
+**Plan:** M1 VGGT-SLAM baseline numbers on warehouse sequences; M2 contact/leg-odometry scale anchor;
+M3 Sim(3) pose-graph fusion + loop closure; M4 ablations (mono/stereo, anchor on/off, loop on/off);
+M5 evaluation protocol + comparison to FoundationVIO/ACRA-style estimators; M6?7 writing.
 
-### T2 — "Keeping the splat map honest: novelty detection and safe navigation" ✅
+**Risk:** contact detection noise, VGGT per-frame scale inconsistency. **Fallback:** keep the anchor method
+but evaluate only on sim sequences and report the failure cases.
 
-G2 + G13 merged (novelty layers, hazard classes, planning integration), on top of T1's map.
-**Why:** prototype exists (84.8 % recall), benchmark matures into a paper, direct deployment relevance.
-**Plan:** M1 prior map + residual pipeline; M2 uncertainty/temporal/negative-change; M3 planner integration;
-M4 benchmark with dynamic actors; M5 sim2real analysis; M6–7 writing.
+### T2 ? "Keeping the splat map honest: prior-map novelty with calibrated uncertainty" ?
 
-### T3 — "Handless interaction in photoreal simulation" (G5 + G6 + G4)
+G2. The claim is a **method**: a camera-only novelty layer over a prior splat map that detects new *and
+removed* geometry, attaches calibrated uncertainty, and feeds a hazard-cost planner. Detection alone would
+be scooped by GS-LTS, so the contribution is the uncertainty calibration + planner integration + measured
+safety effect.
 
-Build splat-based simulation with auto-colliders, then either (a) study visual/physics fidelity effects on
-locomotion transfer, or (b) learn non-prehensile pushing/transport with OIL-style object commands.
-**Why:** highest novelty (GaussGym/NuRec exist but handless-humanoid interaction is open), aligned with
-NVIDIA's stack. **Risks:** rendering budget, hardware validation of contact control, scope discipline.
-**Only choose this if:** the R1 is available for at least a small hardware validation and 5+ months remain.
+**Plan:** M1 prior map + residual baseline; M2 uncertainty/temporal/negative change; M3 planner integration;
+M4 evaluation protocol (new/moved/removed objects, forklift, lighting); M5 sim2real sensitivity; M6?7 writing.
 
----
+### T3 ? "Handless interaction and photoreal contact in simulation" (G4 + G5, G6 if hardware)
+
+G4 + G5 as a system/method thesis: auto-colliders from splat geometry, then a controlled
+**visual-vs-collider fidelity ablation** for a handless humanoid; if the R1 can push safely, add G6's
+object-kinematic interaction layer.
+
+**Plan:** M1 collider pipelines + accuracy; M2 splat-visual simulation; M3 policy training under the 2x2
+matrix; M4 ablations; M5 hardware validation (if available); M6?7 writing.
+**Only choose this if:** rendering budget is confirmed and (for G6) the R1 can safely push.
 
 ## 5. What is explicitly *not* viable (no hands)
 

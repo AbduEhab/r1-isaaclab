@@ -6,6 +6,10 @@ each gap against the closest work published *up to now*, because a gap that has 
 thesis. Verdicts: **CLEAR** (no system covers the claim; a thesis can be built), **NARROWED** (the core idea
 exists; only a sharply-scoped residual survives), **CLOSED** (the claim is already covered; do not use).
 
+**Direction (2026-11-26):** pure benchmark/dataset topics are excluded. Rows marked EXCLUDED below are
+benchmark-only proposals removed for that reason; benchmarks survive only as evaluation protocols inside a
+method thesis.
+
 Method: for each gap, the closest 2025–2026 systems were searched (arXiv/CVF/IEEE/ACM + repos), their scope
 compared against the gap claim, and the *residual* claim written down. The residual is what a thesis may
 actually claim as novel.
@@ -18,22 +22,23 @@ actually claim as novel.
 |---|---|---|---|---|---|
 | G1 | Metric, loop-closed VGGT SLAM for legged robot | [FoundationVIO (Oct 2026)](https://export.arxiv.org/pdf/2610.14951) enforces metric scale in feed-forward VIO; [scale-anchoring VGGT-SLAM (Nov 2026)](https://export.arxiv.org/pdf/2611.06308); [Contact-Anchored Proprioceptive Odometry (Feb 2026)](https://export.arxiv.org/abs/2602.17393); [ACRA humanoid state estimation](https://ssl.linklings.net/conferences/acra/acra2025_proceedings/views/includes/files/pap169s2.pdf); [LiDAR-VGGT](https://ieeexplore.ieee.org/abstract/document/11399876) | metric scaling exists generically and for VIO; contact odometry exists for quadruped/wheel-legged; LiDAR-VGGT needs LiDAR | **NARROWED** | **Contact-anchored metric VGGT SLAM for a *legged humanoid* with no LiDAR/wheels**, plus a legged warehouse benchmark (no such system found) |
 | G2 | Prior-splat novelty/change layer + safe planning | [GS-LTS (2025/26)](http://export.arxiv.org/pdf/2503.17733) does object-level change detection + Gaussian editing for indoor robots; [DUAL-GS (Nov 2026)](https://ieeexplore.ieee.org/document/11805938) static+dynamic 4D fields (LiDAR-inertial-camera); [SemSafe-3DGS (Sep 2026)](https://arxiv-org.ezproxy.obspm.fr/html/2609.19330v1) semantic risk-aware active navigation in uncertain splat maps | change detection exists; uncertainty-aware splat navigation exists; but not together, and dynamic GS SLAM needs LiDAR | **NARROWED** | **Camera-only prior-map novelty layer (new *and* removed objects) with calibrated uncertainty that is consumed by a planner**, benchmarked with hazards; explicitly not "change detection" as the claim |
-| G3 | Handless-humanoid warehouse benchmark (mapping+navigation) | [HumanoidVLN (Aug 2026)](https://export.arxiv.org/abs/2608.12860) physics-grounded VLN benchmark across embodiments; [DPed-VLN (Sep 2026)](https://zenodo.org/records/22816620) social VLN benchmark; [What the Elevation Map Cannot See (Oct 2026)](https://arxiv.org/abs/2610.07396) hazard + execution-deviation benchmark; [COMPASS intralogistics benchmark (Oct 2026)](https://export.arxiv.org/pdf/2610.28432) industrial sim-to-real navigation incl. a humanoid mobile platform | navigation benchmarks exist; none evaluates **SLAM/mapping quality (ATE/scale)** + **handless legged locomotion** + **industrial dynamic actors** in one suite | **NARROWED** | **Mapping+localisation benchmark** (not another VLN benchmark): SLAM scale/ATE across trajectories, with navigation/hazard tasks layered on it |
+| G3 | Handless-humanoid warehouse benchmark | HumanoidVLN, DPed-VLN, Elevation-Map benchmark, COMPASS intralogistics | covered | **EXCLUDED** | pure benchmark topic (direction) |
 | G4 | Auto-collider generation from splats | [UCL 3DGS digital twin (2026)](https://discovery.ucl.ac.uk/id/eprint/10232226/) converts splats to **collision-ready** geometry (Unity/ROS2/MoveIt); [TwinAligner (2026)](https://browse-export.arxiv.org/pdf/2512.19390) mesh-GS twin + dynamics alignment; Mesh-GS variants | the core idea is published (for manipulation) | **NARROWED/weak** | Only the **evaluation methodology for locomotion-scale colliders** (steps, gaps, floor height) survives; best as a chapter, not a thesis |
 | G5 | Photoreal splat sim fidelity vs control | [GaussGym (2025/26)](https://arxiv.org/abs/2510.15352) 3DGS as renderer inside vectorized physics, locomotion from pixels at >100k steps/s; [COMPASS+Cosmos intralogistics sim2real (Oct 2026)](https://export.arxiv.org/pdf/2610.28432); [RE3SIM](https://ieeexplore.ieee.org/document/11695858) | splat-sim locomotion exists; industrial sim2real benchmark exists | **NARROWED** | **Controlled ablation of *visual* vs *collider* fidelity for a humanoid locomotion policy** (GaussGym shows rendering works; nobody isolates the two factors with a real-robot check) |
 | G6 | Handless non-prehensile interaction on the R1 | [OIL (Nov 2026)](https://ojs.aaai.org/index.php/AAAI-SS/article/view/43503) pushing/pulling/transport on Digit; [VOFA (2026)](https://arxiv.org/html/2605.01518v2) visual pushing; [iGPC (Oct 2026)](https://arxiv-org.ezproxy.obspm.fr/html/2610.08120v1) object-aware humanoid interaction with onboard sensing | handless interaction demonstrated on other humanoids | **CLEAR (narrow)** | **R1-class handless interaction without force/torque sensing**, splat-sim trained; hard to claim broadly, strong if hardware validated |
-| G7 | Fleet traffic with learned walkers | [MIT/Symbotic warehouse traffic RL (Mar 2026)](https://computing.mit.edu/news/ai-system-learns-to-keep-warehouse-robot-traffic-running-smoothly/); [humanoid fleet orchestration (2026)](https://www.theengineer.co.uk/content/news/ai-framework-aims-to-orchestrate-humanoid-robot-fleets) | industrial traffic learning exists | **NARROWED/weak** | *Execution-error-aware* scheduling (learned walkers deviate from commanded velocity) as a benchmark+method; modest novelty |
-| G8 | Distillation benchmark for locomotion | [E2DRL](https://ieeexplore.ieee.org/document/11753978); [offline KD for quadruped](https://ieeexplore.ieee.org/document/11615876); small IsaacLab comparisons already reported publicly (e.g., a student study comparing PPO/teacher-student/P2PDRL/CPD) | comparison-style work exists in bits | **WEAK** | Only a *methodological* protocol paper; not recommended as a main thesis |
+| G7 | Fleet traffic with learned walkers | MIT/Symbotic RL traffic, humanoid fleet orchestration | industrial | **EXCLUDED** | benchmark/system topic, weak method novelty |
+| G8 | Distillation benchmark for locomotion | E2DRL, offline KD for quadruped, public IsaacLab comparisons | comparisons exist | **EXCLUDED** | pure comparison/benchmark topic |
 | G9 | Safety wrapper / fall-safety for deployed walker | [FIRM (Jun 2026)](https://ieeexplore.ieee.org/document/11696999); [Humanoid-WAM (2026)](https://zenodo.org/records/20313417) includes balance-aware risk estimation + unsafe action filtering; barrier-certificate literature | safety filtering exists at system level | **NARROWED** | R1-specific, policy-integrated safety monitor with measured intervention statistics; chapter-level |
 | G10 | Planning under splat-map uncertainty | [SemSafe-3DGS (Sep 2026)](https://arxiv-org.ezproxy.obspm.fr/html/2609.19330v1) risk-aware active nav on uncertain splat maps; [Active NBV AVaR (2026)](https://ieeexplore.ieee.org/abstract/document/11696764); [MAGICIAN (CVPR'26)](https://blog.csdn.net/Yong_Qi2015/article/details/160749185); LLM-guided active mapping with Fisher information (2026) | this gap is essentially closed | **CLOSED** | — |
 | G11 | Multi-session splat map maintenance | multi-session GS via LIVO alignment (CCDC 2026); LiLoc lifelong localisation; GS-LTS long-term updates | offline multi-session exists; LiLoc is lifelong | **NARROWED** | Robot-loop online maintenance on a *legged* platform; hard, 18+ weeks, risky |
 | G12 | Dynamic/4D warehouse reconstruction for navigation | [DUAL-GS (Nov 2026)](https://ieeexplore.ieee.org/document/11805938); ProDyG (NeurIPS 2025); 4DGS-SLAM family; RGS-SLAM | crowded | **CLOSED** (for mapping) | Predictive use of the dynamic layer in navigation is unexplored, but that is a hard, long bet |
-| G13 | Dynamic/social navigation benchmark | DPed-VLN; "Elevation Map Cannot See"; social navigation literature | covered at benchmark level | **CLOSED/weak** | Only warehouse-specific (forklift) social navigation; merge into G3 |
+| G13 | Dynamic/social navigation benchmark | DPed-VLN; Elevation Map benchmark | covered | **EXCLUDED** | pure benchmark topic (also closed) |
 | G14 | VLA navigation evaluation | HumanoidVLN (Aug 2026); TANGO (Sep 2026); GR00T/Psi0 ecosystem | broadly covered | **CLOSED** | — |
 | G15 | Contact-aware metric state estimation | [Contact-Anchored Proprioceptive Odometry (Feb 2026)](https://export.arxiv.org/abs/2602.17393) already does IMU+motor pose/velocity estimation for legged/wheel-legged robots | covered for the estimator | **NARROWED** | Integration with a policy that *uses* the estimate instead of history observations; a chapter, not a thesis |
 
-**Net result: 0 gaps are "clear" in the strong sense; 1 is clear in the narrow sense (G6 if hardware
-exists); 8 are narrowed; 6 are closed or too weak.** The honest conclusion is that the 2026 field moves fast
+**Net result after removing benchmark-only topics: 1 narrow-clear method gap (G6, hardware-gated), 7 narrowed
+method gaps (G1, G2, G4, G5, G9, G11, G15), and 3 closed method gaps (G10, G12, G14). No broad gap statement
+survives as-is.** The honest conclusion is that the 2026 field moves fast
 enough that broad "we will do X" claims are usually already done by someone — a master's thesis has to claim
 a *combination* or a *specific robot/benchmark* that the literature does not cover.
 
@@ -46,7 +51,7 @@ a *combination* or a *specific robot/benchmark* that the literature does not cov
 > Foundation-model SLAM (VGGT-SLAM 2.0) produces maps with arbitrary scale and submap drift; existing
 > metric fixes use VIO (FoundationVIO), semantics (scale anchoring) or LiDAR (LiDAR-VGGT). No system anchors
 > a feed-forward SLAM map using **leg contact and kinematics** on a **handless legged humanoid**, and no
-> benchmark measures scale/ATE for that setting. We provide the contact-anchored fusion and the benchmark.
+> benchmark measures scale/ATE for that setting. We provide the contact-anchored fusion method and an evaluation protocol on simulator ground truth.
 
 Why the residual is defensible: contact anchoring is genuinely different from VIO (no wheel, intermittent
 contacts, foot-slip), and the eval target (legged humanoid, industrial warehouse, no LiDAR) is unoccupied.
@@ -74,28 +79,28 @@ Only viable if the R1 can push objects safely and if torque/sensing is sufficien
 
 ---
 
-## 3. Revised recommendation
+## 3. Revised recommendation (method-only, no benchmark theses)
 
-**Do not build the thesis around G10/G12/G13/G14 (closed) or G8/G4/G7/G11/G15/G9 as main claims
-(narrowed/weak).** Instead structure one thesis with one clear claim + one integration claim + benchmark:
+Pure benchmark/dataset topics are excluded. One thesis, three method claims, one evaluation protocol:
 
 ```
-Thesis: "Feed-forward mapping and hazard-aware navigation for a handless humanoid in industrial warehouses"
+Thesis: "Metric feed-forward mapping and hazard-aware navigation for a handless humanoid"
 
-Chapter 1 (claim A): contact-anchored metric VGGT-SLAM 2.0 for the R1       [CLEAR residual]
-Chapter 2 (benchmark): mapping+localisation+hazard benchmark, GT in sim     [clear artifact]
-Chapter 3 (claim B):    prior-map novelty layer with uncertainty + planner   [NARROWED residual]
-Chapter 4 (optional):   R1 handless pushing demo / sim2real (claim C)        [hardware-gated]
+Chapter 1 (claim A): contact-anchored metric VGGT-SLAM for the R1              [NARROWED -> defensible]
+Chapter 2 (claim B): prior-map novelty with calibrated uncertainty + planner    [NARROWED -> defensible]
+Chapter 3 (optional): R1 handless pushing without force sensing (claim C)      [hardware-gated]
+
+Evaluation (not a contribution): simulator ground truth (ATE/scale/drift, hazard contacts, safety rates)
 ```
 
-This gives one strong method claim, one benchmark artifact, one integration claim, and an optional
-hardware flourish — and every chapter is defensible against the 2026 literature. It also survives if any
-single chapter is scooped (the benchmark remains).
+- Claim A is the strongest: metric scaling exists generically (FoundationVIO) but not contact-anchored on a
+  legged humanoid; the evaluation is a protocol, not a benchmark thesis.
+- Claim B is defensible only as a method (uncertainty calibration + planner integration); change detection
+  alone is scooped by GS-LTS.
+- Claim C drops cleanly if hardware or torque sensing is unavailable; the thesis remains complete.
 
-**Fallback if the R1 hardware is unavailable:** drop Chapter 4; the thesis is still complete (sim-only), and
-Claim A + benchmark is the strongest sim-only combination.
-
----
+**Fallback if claim A is scooped mid-thesis:** pivot the main claim to B (novelty/uncertainty integration)
+and keep A's evaluation protocol as a chapter; no benchmark claim is needed.
 
 ## 4. What would change the verdicts
 
