@@ -8,6 +8,10 @@ thesis for *this* workspace (Unitree R1 + Isaac Sim warehouse + VGGT-SLAM 2.0 + 
 cross-checked against the internal survey `docs/SOTA_RESEARCH_2026-11.md` (2026-11-13) and against the
 artefacts actually present in this workspace (audited, see §3).
 
+**Handless-R1 deep dive:** [THESIS_DEEP_DIVE_HANDLESS_2026-11.md](THESIS_DEEP_DIVE_HANDLESS_2026-11.md)
+re-examines every gap for an R1 without hands (no grasping), adds the 2026 handless-interaction work (OIL,
+VOFA, FIRM, GaussGym) and re-ranks 15 gaps with detailed experiment plans.
+
 **Companion document (broader):** [RESEARCH_LANDSCAPE_BROAD_2026-11.md](RESEARCH_LANDSCAPE_BROAD_2026-11.md)
 extends the search to robot foundation models/VLA, world models, loco-manipulation, tactile/event sensing,
 safety verification, multi-robot coordination and benchmarks, and adds gaps B1-B10 plus a revised combined
