@@ -24,6 +24,7 @@ provides one.
 | VGGT-SLAM 2.0 map | **done**: warehouse capture ? container run ? Sim(3)-aligned ATE 0.23 m (40 frames) / 0.92 m (70 frames), [details](docs/VGGT_SLAM.md) |
 | Warehouse splat | **done**: 212-frame RGB-D walkthrough ? NVIDIA gsplat, 200k Gaussians, walkthrough video + PLY, [details](docs/SPLAT_WAREHOUSE.md) |
 | Novelty-layer concept proof | **done**: Isaac Sim prior-map vs live-with-new-boxes: 4/4 objects, P=R=1.00, 0 FP pixels; stale map 32 collision cells -> novelty map 0; [results](docs/NOVELTY_PROOF_RESULTS.md) |
+| Literature corpus | **done**: 300 papers 1968-2026 by citation chaining (seeds -> ancestors -> children -> children of children), 166 OA PDFs, BibTeX + per-theme lists, [details](docs/LITERATURE_CORPUS.md) |
 | Thesis gap analysis | **done**: SOTA survey (GS, VSLAM, humanoid RL, distillation) + 12 ranked gaps, [deep dive](docs/THESIS_GAPS_2026-11.md); broader landscape incl. VLA/world models/loco-manipulation in [companion](docs/RESEARCH_LANDSCAPE_BROAD_2026-11.md); handless-R1 deep dive in [deep dive](docs/THESIS_DEEP_DIVE_HANDLESS_2026-11.md); literature verification of each gap in [verification](docs/THESIS_GAP_VERIFICATION_2026-11.md); full design of the recommended method thesis in [G2 design](docs/THESIS_G2_DESIGN.md) and its [literature review](docs/LITREVIEW_G2.md) |
 | Sim-to-real | not started |
 
